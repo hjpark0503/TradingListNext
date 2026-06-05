@@ -592,7 +592,72 @@ tfoot td.r  { text-align:right; color:var(--text-primary); font-size:.81rem; }
 .toast-warn { background:#C05621; color:#fff; }
 
 /* ══════════════════════════════════════════════════════════════════
-   13. FOOTER
+   13. CAPITAL GAINS TAX CALCULATOR (해외 양도세)
+   ══════════════════════════════════════════════════════════════════ */
+.cap-gains {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.cap-gains__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.015);
+}
+.cap-gains__title {
+  font-size: .83rem; font-weight: 700; color: var(--text-secondary);
+}
+.cap-gains__year-sel {
+  width: auto; height: 30px; padding: 0 28px 0 10px; font-size: .75rem;
+}
+.cap-gains__empty {
+  padding: 28px 18px; font-size: .80rem; color: var(--text-muted); text-align: center;
+}
+.cap-gains__table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.cap-gains__table { min-width: 580px; }
+.cap-gains__stock {
+  font-weight: 600; color: var(--text-primary) !important;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: -.02em;
+}
+.cap-gains__no-data { font-size: .68rem; color: var(--text-muted); font-style: italic; }
+
+.cg-pos { color: var(--buy)  !important; font-weight: 600; }
+.cg-neg { color: var(--sell) !important; font-weight: 600; }
+
+.cap-gains__warn {
+  margin: 10px 18px 0;
+  padding: 8px 12px;
+  background: rgba(192,86,33,0.06); border: 1px solid rgba(192,86,33,0.18);
+  border-radius: var(--r-sm); font-size: .72rem; color: var(--orange);
+}
+.cap-gains__summary {
+  margin: 14px 18px;
+  padding: 14px 16px;
+  background: rgba(49,130,206,0.04); border: 1px solid rgba(49,130,206,0.14);
+  border-radius: var(--r-md);
+  display: flex; flex-direction: column; gap: 9px;
+}
+.cap-gains__sum-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.cap-gains__sum-label { font-size: .75rem; color: var(--text-secondary); }
+.cap-gains__sum-val {
+  font-family: 'JetBrains Mono', monospace; font-size: .88rem; font-weight: 600;
+  color: var(--text-primary);
+}
+.cap-gains__sum-deduct { color: var(--text-muted); font-weight: 500; }
+.cap-gains__sum-divider { height: 1px; background: rgba(49,130,206,0.14); }
+.cap-gains__sum-row--tax .cap-gains__sum-label { font-weight: 700; color: var(--text-primary); }
+.cg-tax { color: var(--orange) !important; font-size: .95rem !important; }
+.cap-gains__note {
+  padding: 6px 18px 14px; font-size: .64rem; color: var(--text-muted); line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   14. FOOTER
    ══════════════════════════════════════════════════════════════════ */
 .footer {
   text-align:center; padding:24px 20px;

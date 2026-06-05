@@ -7,6 +7,7 @@ import { EntryTable } from './EntryTable';
 import { Market, TradeType } from '@/lib/types';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
 import { formatUsd } from '@/lib/utils';
+import { CapitalGainsTax } from './CapitalGainsTax';
 
 const CARDS = [
   { id: 'buy',      label: '💳 매수',   valueColor: 'red' },
@@ -167,6 +168,11 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+
+          {/* 해외: 양도세 계산기 */}
+          {currentMarket === 'overseas' && (
+            <CapitalGainsTax entries={entries} exchangeRate={exchangeRate} />
+          )}
 
         </div>
       </div>
