@@ -3,11 +3,10 @@
 import { useDashboard } from '@/hooks/useDashboard';
 import { Header } from './Header';
 import { TradeForm } from './TradeForm';
-import { TradeTable } from './TradeTable';
 import { EntryTable } from './EntryTable';
-import { BalanceChart } from './BalanceChart';
-import { formatUsd } from '@/lib/utils';
 import { Market, TradeType } from '@/lib/types';
+import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
+import { formatUsd } from '@/lib/utils';
 
 const CARDS = [
   { id: 'buy',      label: '💳 매수',   valueColor: 'red' },
@@ -36,42 +35,40 @@ const EMPTY_MSGS: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { state, handlePdfFile, setExchangeRate, switchTab, switchMarket, addEntry, deleteEntry } = useDashboard();
+  const { state, setExchangeRate, switchTab, switchMarket, addEntry, deleteEntry, loadEntries } = useDashboard();
 
-  const {
-    buys, sells, plRows, plTotals,
-    exchangeRate, estimatedTax,
-    activeTab, currentMarket,
-    loading, loadingMessage,
-    headerSub, headerMeta,
-    entries,
-  } = state;
+  const { exchangeRate, activeTab, currentMarket, entries } = state;
 
-  const allRows = [...buys, ...sells];
+  const marketEntries = entries.filter((e) => e.market === currentMarket);
 
-  // 카드 수치: 직접 입력 entries 기준
   function cardCount(id: string) {
-    const n = entries.filter((e) => e.type === id).length;
+    const n = marketEntries.filter((e) => e.type === id).length;
     return n ? `${n}건` : '—';
   }
   function cardNote(id: string) {
-    const filtered = entries.filter((e) => e.type === id);
+    const filtered = marketEntries.filter((e) => e.type === id);
     if (!filtered.length) return '—';
     const total = filtered.reduce((s, e) => s + e.settlement, 0);
-    const mkt = filtered[0].market;
-    if (mkt === 'domestic') return `총 ₩${Math.round(total).toLocaleString('ko-KR')}`;
+    if (currentMarket === 'domestic') return `총 ₩${Math.round(total).toLocaleString('ko-KR')}`;
     return `총 $${formatUsd(total)}`;
   }
 
+  const handleExport = () => {
+    exportEntriesToExcel(entries);
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const imported = await importEntriesFromExcel(file);
+      loadEntries(imported);
+    } catch (e) {
+      alert('엑셀 파일을 읽는 중 오류가 발생했습니다: ' + ((e as Error)?.message ?? String(e)));
+    }
+  };
+
   return (
     <div>
-      <Header
-        headerSub={headerSub}
-        headerMeta={headerMeta}
-        loading={loading}
-        loadingMessage={loadingMessage}
-        onFileSelect={handlePdfFile}
-      />
+      <Header onExport={handleExport} onImport={handleImport} hasEntries={entries.length > 0} />
 
       <div className="main-layout">
 
@@ -102,7 +99,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 해외: 환율 + 예상 양도세 패널 */}
+          {/* 해외: 환율 패널 */}
           {currentMarket === 'overseas' && (
             <div className="overseas-panel" id="overseas-panel">
               <div className="overseas-panel__main">
@@ -119,20 +116,7 @@ export default function Dashboard() {
                     <span className="overseas-panel__unit">/ USD</span>
                   </div>
                 </div>
-                <div className="overseas-panel__divider" aria-hidden />
-                <div className="overseas-panel__etax">
-                  <span className="overseas-panel__title">💸 예상 양도세</span>
-                  <div className="overseas-panel__value orange" id="card-etax-value">
-                    {estimatedTax > 0 ? `$${formatUsd(estimatedTax)}` : '$0.00'}
-                  </div>
-                  <div className="overseas-panel__note" id="card-etax-note">
-                    {estimatedTax > 0
-                      ? `≈ ₩${Math.round(estimatedTax * exchangeRate).toLocaleString()}`
-                      : '기본공제 ₩250만 적용'}
-                  </div>
-                </div>
               </div>
-              <p className="overseas-panel__hint">양도소득세 계산 기준 (기본공제 250만원, 세율 22%)</p>
             </div>
           )}
 
@@ -151,37 +135,6 @@ export default function Dashboard() {
                 <div className="note">{cardNote(card.id)}</div>
               </div>
             ))}
-
-            {/* 실현 손익 카드 (PDF 데이터 기준) */}
-            <div className="card card-stat" id="card-pl">
-              <div className="label">📈 실현 손익</div>
-              <div
-                className={`value${plTotals.hasSomeData ? ` ${plTotals.totalPL >= 0 ? 'red' : 'blue'}` : ''}`}
-                id="card-pl-value"
-              >
-                {plTotals.hasSomeData
-                  ? `${plTotals.totalPL >= 0 ? '+$' : '-$'}${formatUsd(Math.abs(plTotals.totalPL))}`
-                  : '—'}
-              </div>
-              <div className="note" id="card-pl-note">
-                {plTotals.hasSomeData && plTotals.plPct !== null
-                  ? `${plTotals.plPct >= 0 ? '+' : ''}${plTotals.plPct.toFixed(2)}% 수익률`
-                  : '데이터 로드 후 표시'}
-              </div>
-            </div>
-          </div>
-
-          {/* 잔고 흐름 차트 (PDF 데이터 기준) */}
-          <div className="section chart-section">
-            <h2>💰 잔고 흐름</h2>
-            <p className="chart-hint" id="chartLineHint">
-              {allRows.length > 0
-                ? `${new Set(allRows.map((r) => r.date)).size}개 거래일 기준 일별 말잔 예수금입니다.`
-                : '거래일 기준 일별 말잔 잔고가 표시됩니다.'}
-            </p>
-            <div className="chart-wrap chart-wrap--tall">
-              <BalanceChart rows={allRows} />
-            </div>
           </div>
 
           {/* 탭 거래내역 */}
@@ -205,19 +158,12 @@ export default function Dashboard() {
                 className={`tab-panel${activeTab === tab.id ? ' active' : ''}`}
                 id={`panel-${tab.id}`}
               >
-                {/* 매수/매도 탭은 PDF 파싱 결과도 함께 표시 */}
-                {tab.id === 'buy' && buys.length > 0 ? (
-                  <TradeTable rows={buys} side="buy" />
-                ) : tab.id === 'sell' && sells.length > 0 ? (
-                  <TradeTable rows={sells} plRows={plRows} side="sell" />
-                ) : (
-                  <EntryTable
-                    entries={entries}
-                    panel={tab.id as TradeType | 'all'}
-                    emptyMsg={EMPTY_MSGS[tab.id]}
-                    onDelete={deleteEntry}
-                  />
-                )}
+                <EntryTable
+                  entries={marketEntries}
+                  panel={tab.id as TradeType | 'all'}
+                  emptyMsg={EMPTY_MSGS[tab.id]}
+                  onDelete={deleteEntry}
+                />
               </div>
             ))}
           </div>
