@@ -296,8 +296,11 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
         </div>
 
         <div className="modal-footer">
-          <button className="btn-ghost" onClick={closeEdit}>취소</button>
-          <button className="btn-primary" onClick={handleSave}>저장</button>
+          <button className="btn-danger" onClick={() => { onDelete(editingId); closeEdit(); }}>삭제</button>
+          <div className="modal-footer-right">
+            <button className="btn-ghost" onClick={closeEdit}>취소</button>
+            <button className="btn-primary" onClick={handleSave}>저장</button>
+          </div>
         </div>
       </div>
     </div>,
@@ -323,7 +326,6 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
                 <th className="r">수수료</th>
                 <th className="r">세금</th>
                 <th className="r">정산금액</th>
-                <th className="c">삭제</th>
               </tr>
             </thead>
             <tbody>
@@ -343,12 +345,6 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
                   <td className="r fee-cell">{fmtNum(e.fee, e.market)}</td>
                   <td className="r tax-cell">{fmtNum(e.tax, e.market)}</td>
                   <td className="r settle-cell">{fmtNum(e.settlement, e.market)}</td>
-                  <td className="c">
-                    <button className="btn-del" aria-label="삭제"
-                      onClick={(ev) => { ev.stopPropagation(); onDelete(e.id); }}>
-                      ×
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -360,7 +356,6 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
                   <td className="r">{fmtNum(sumFee, mkt)}</td>
                   <td className="r">{fmtNum(sumTax, mkt)}</td>
                   <td className="r">{fmtNum(sumSettlement, mkt)}</td>
-                  <td />
                 </tr>
               </tfoot>
             )}
