@@ -8,6 +8,7 @@ import { Market, TradeType } from '@/lib/types';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
 import { formatUsd } from '@/lib/utils';
 import { CapitalGainsTax } from './CapitalGainsTax';
+import { TradeTypeDonutChart } from './TradeTypeDonutChart';
 
 const CARDS = [
   { id: 'buy',      label: '💳 매수',   valueColor: 'red' },
@@ -137,6 +138,9 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+
+          {/* 거래 유형별 도넛 차트 */}
+          <TradeTypeDonutChart entries={marketEntries} market={currentMarket} />
 
           {/* 탭 거래내역 */}
           <div className="section">
