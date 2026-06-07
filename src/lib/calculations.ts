@@ -77,16 +77,27 @@ export function calcCapitalGains(
   return { rows, totalPlKrw, deductionKrw, taxableKrw, estimatedTaxKrw: taxableKrw * 0.22, hasIncompleteData };
 }
 
+export interface RealizedPLRow {
+  stock: string;
+  avgCostPerUnit: number;
+  sellQty: number;
+  sellProceeds: number;
+  buyCost: number;
+  pl: number;
+  hasBuyData: boolean;
+}
+
 export interface RealizedPLResult {
   totalPL: number;
   hasIncompleteData: boolean;
+  rows: RealizedPLRow[];
 }
 
 export function calcRealizedPL(entries: Entry[]): RealizedPLResult {
   const buys  = entries.filter((e) => e.type === 'buy'  && e.qty > 0);
   const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0);
 
-  if (sells.length === 0) return { totalPL: 0, hasIncompleteData: false };
+  if (sells.length === 0) return { totalPL: 0, hasIncompleteData: false, rows: [] };
 
   const costAccum: Record<string, { totalCost: number; totalQty: number }> = {};
   for (const b of buys) {
@@ -96,19 +107,33 @@ export function calcRealizedPL(entries: Entry[]): RealizedPLResult {
     costAccum[key].totalQty  += b.qty;
   }
 
+  const sellAccum: Record<string, { qty: number; proceeds: number; label: string }> = {};
+  for (const s of sells) {
+    const key = s.stock.trim().toUpperCase();
+    if (!sellAccum[key]) sellAccum[key] = { qty: 0, proceeds: 0, label: s.stock.trim() };
+    sellAccum[key].qty      += s.qty;
+    sellAccum[key].proceeds += s.settlement;
+  }
+
   let totalPL = 0;
   let hasIncompleteData = false;
-  for (const s of sells) {
-    const key   = s.stock.trim().toUpperCase();
+  const rows: RealizedPLRow[] = [];
+
+  for (const [key, { qty, proceeds, label }] of Object.entries(sellAccum)) {
     const accum = costAccum[key];
     if (accum && accum.totalQty > 0) {
-      totalPL += s.settlement - (accum.totalCost / accum.totalQty) * s.qty;
+      const avgCostPerUnit = accum.totalCost / accum.totalQty;
+      const buyCost = avgCostPerUnit * qty;
+      const pl = proceeds - buyCost;
+      totalPL += pl;
+      rows.push({ stock: label, avgCostPerUnit, sellQty: qty, sellProceeds: proceeds, buyCost, pl, hasBuyData: true });
     } else {
       hasIncompleteData = true;
+      rows.push({ stock: label, avgCostPerUnit: 0, sellQty: qty, sellProceeds: proceeds, buyCost: 0, pl: 0, hasBuyData: false });
     }
   }
 
-  return { totalPL, hasIncompleteData };
+  return { totalPL, hasIncompleteData, rows };
 }
 
 export function calcEstimatedTax(totalPLUsd: number, exchangeRate: number): number {

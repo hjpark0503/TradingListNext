@@ -402,6 +402,34 @@ body[data-market="domestic"] #overseas-panel { display:none !important; }
 .card-pl .pl-neg { color:var(--sell) !important; }
 .card-pl .text-muted { color:var(--text-muted) !important; }
 
+/* 실현손익 계산 내역 패널 */
+.pl-detail-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-active);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm), 0 0 0 3px rgba(49,130,206,.08);
+  overflow: hidden;
+  animation: fadeUp .2s ease both;
+}
+.pl-detail-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(49,130,206,0.04);
+  font-size: .82rem; font-weight: 700; color: var(--text-secondary);
+}
+.pl-detail-hint {
+  font-size: .68rem; font-weight: 500; color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.pl-detail-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pl-detail-table { min-width: 560px; }
+.pl-detail-table thead th { font-size: .80rem; }
+.pl-detail-stock {
+  font-weight: 600; color: var(--text-primary) !important;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: -.02em;
+}
+
 .card .label {
   font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
   color:var(--text-label); margin-bottom:8px;
@@ -697,6 +725,9 @@ tfoot td.r  { text-align:right; color:var(--text-primary); font-size:.81rem; }
 }
 .cap-gains__table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .cap-gains__table { min-width: 580px; }
+.cap-gains__table thead th {
+  font-size: .80rem;
+}
 .cap-gains__stock {
   font-weight: 600; color: var(--text-primary) !important;
   font-family: 'JetBrains Mono', monospace; letter-spacing: -.02em;
