@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Entry, TradeType, Market } from '@/lib/types';
+import { calcRealizedPL } from '@/lib/calculations';
 
 const TYPE_LABEL: Record<TradeType, string> = {
   buy: '매수', sell: '매도', deposit: '입금', withdraw: '출금', div: '배당금',
@@ -72,6 +73,23 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
   const sumTax        = list.reduce((s, e) => s + e.tax, 0);
   const sumSettlement = list.reduce((s, e) => s + e.settlement, 0);
   const mkt: Market   = list[0]?.market ?? 'domestic';
+
+  const typeSums = panel === 'all'
+    ? (['buy', 'sell', 'deposit', 'withdraw', 'div'] as TradeType[]).flatMap((type) => {
+        const sub = list.filter((e) => e.type === type);
+        if (sub.length === 0) return [];
+        return [{
+          type,
+          count:      sub.length,
+          amount:     sub.reduce((s, e) => s + e.amount, 0),
+          fee:        sub.reduce((s, e) => s + e.fee, 0),
+          tax:        sub.reduce((s, e) => s + e.tax, 0),
+          settlement: sub.reduce((s, e) => s + e.settlement, 0),
+        }];
+      })
+    : [];
+
+  const realizedPL = panel === 'all' ? calcRealizedPL(list) : null;
 
   // Modal derived state
   const d       = draft;
@@ -334,17 +352,48 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={6}>합계 ({list.length}건)</td>
-                <td className="r">{fmtNum(sumAmount, mkt)}</td>
-                <td className="r">{fmtNum(sumFee, mkt)}</td>
-                <td className="r">{fmtNum(sumTax, mkt)}</td>
-                <td className="r">{fmtNum(sumSettlement, mkt)}</td>
-                <td />
-              </tr>
-            </tfoot>
+            {panel !== 'all' && (
+              <tfoot>
+                <tr>
+                  <td colSpan={6}>합계 ({list.length}건)</td>
+                  <td className="r">{fmtNum(sumAmount, mkt)}</td>
+                  <td className="r">{fmtNum(sumFee, mkt)}</td>
+                  <td className="r">{fmtNum(sumTax, mkt)}</td>
+                  <td className="r">{fmtNum(sumSettlement, mkt)}</td>
+                  <td />
+                </tr>
+              </tfoot>
+            )}
           </table>
+        </div>
+      )}
+
+      {typeSums.length > 0 && (
+        <div className="type-summary-section">
+          <ul className="type-summary-list">
+            {typeSums.map((ts) => (
+              <li key={ts.type} className="type-summary-item">
+                <div className="type-summary-item__left">
+                  <span className={`badge ${TYPE_CLASS[ts.type]}`}>{TYPE_LABEL[ts.type]}</span>
+                  <span className="type-summary-count">{ts.count}건</span>
+                </div>
+                <span className="type-summary-settle">{fmtNum(ts.settlement, mkt)}</span>
+              </li>
+            ))}
+            {realizedPL && (
+              <li className={`type-summary-item type-summary-item--pl ${realizedPL.totalPL >= 0 ? 'pl-pos-row' : 'pl-neg-row'}`}>
+                <div className="type-summary-item__left">
+                  <span className="pl-label">실현손익</span>
+                  {realizedPL.hasIncompleteData && (
+                    <span className="pl-incomplete" title="일부 매수 데이터가 없어 추정값입니다">추정</span>
+                  )}
+                </div>
+                <span className="pl-val">
+                  {realizedPL.totalPL >= 0 ? '+' : ''}{fmtVal(realizedPL.totalPL, mkt)}
+                </span>
+              </li>
+            )}
+          </ul>
         </div>
       )}
       {modal}

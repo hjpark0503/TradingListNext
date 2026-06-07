@@ -77,6 +77,40 @@ export function calcCapitalGains(
   return { rows, totalPlKrw, deductionKrw, taxableKrw, estimatedTaxKrw: taxableKrw * 0.22, hasIncompleteData };
 }
 
+export interface RealizedPLResult {
+  totalPL: number;
+  hasIncompleteData: boolean;
+}
+
+export function calcRealizedPL(entries: Entry[]): RealizedPLResult {
+  const buys  = entries.filter((e) => e.type === 'buy'  && e.qty > 0);
+  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0);
+
+  if (sells.length === 0) return { totalPL: 0, hasIncompleteData: false };
+
+  const costAccum: Record<string, { totalCost: number; totalQty: number }> = {};
+  for (const b of buys) {
+    const key = b.stock.trim().toUpperCase();
+    if (!costAccum[key]) costAccum[key] = { totalCost: 0, totalQty: 0 };
+    costAccum[key].totalCost += b.settlement;
+    costAccum[key].totalQty  += b.qty;
+  }
+
+  let totalPL = 0;
+  let hasIncompleteData = false;
+  for (const s of sells) {
+    const key   = s.stock.trim().toUpperCase();
+    const accum = costAccum[key];
+    if (accum && accum.totalQty > 0) {
+      totalPL += s.settlement - (accum.totalCost / accum.totalQty) * s.qty;
+    } else {
+      hasIncompleteData = true;
+    }
+  }
+
+  return { totalPL, hasIncompleteData };
+}
+
 export function calcEstimatedTax(totalPLUsd: number, exchangeRate: number): number {
   if (totalPLUsd <= 0 || exchangeRate <= 0) return 0;
   const taxable = totalPLUsd - 2500000 / exchangeRate;

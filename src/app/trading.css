@@ -466,8 +466,9 @@ body[data-market="domestic"] #overseas-panel { display:none !important; }
 /* ══════════════════════════════════════════════════════════════════
    10. TAB PANELS & TABLE
    ══════════════════════════════════════════════════════════════════ */
-.tab-panel { display:none; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.tab-panel { display:none; }
 .tab-panel.active { display:block; }
+.table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 
 /* 빈 상태 */
 .panel-empty {
@@ -501,7 +502,7 @@ tbody tr:last-child { border-bottom:none; }
 tbody tr:hover      { background:rgba(49,130,206,0.035); }
 
 tbody td {
-  padding:11px 13px; color:var(--text-secondary);
+  padding:8px 13px; color:var(--text-secondary);
   vertical-align:middle; white-space:nowrap;
   font-size:.81rem;
 }
@@ -521,6 +522,76 @@ tbody td.r {
 tfoot tr    { background:rgba(0,0,0,0.02); border-top:1px solid rgba(0,0,0,0.07); }
 tfoot td    { padding:10px 13px; font-size:.81rem; font-weight:600; color:var(--text-muted); }
 tfoot td.r  { text-align:right; color:var(--text-primary); font-size:.81rem; }
+
+.type-summary-section { margin: 12px 18px 16px; }
+
+.type-summary-list {
+  list-style: none;
+  margin: 0; padding: 0;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.type-summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.type-summary-item:last-child { border-bottom: none; }
+
+.type-summary-item__left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.type-summary-count {
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+
+.type-summary-settle {
+  font-family: 'JetBrains Mono','Courier New',monospace;
+  font-size: .83rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 실현손익 행 */
+.type-summary-item--pl {
+  padding: 11px 14px;
+  border-top: 1.5px solid rgba(0,0,0,0.1);
+}
+
+.pl-pos-row { background: rgba(56,161,105,0.06); }
+.pl-neg-row { background: rgba(229,62,62,0.06); }
+
+.pl-label {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pl-val {
+  font-family: 'JetBrains Mono','Courier New',monospace;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.pl-pos-row .pl-val { color: var(--buy); }
+.pl-neg-row .pl-val { color: var(--sell); }
+
+.pl-incomplete {
+  font-size: .68rem;
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.06);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
 
 .pl-pos { color:var(--buy)  !important; font-weight:600; }
 .pl-neg { color:var(--sell) !important; font-weight:600; }
