@@ -53,10 +53,10 @@ export function CapitalGainsTax({ entries, exchangeRate, setExchangeRate }: Prop
   return (
     <div className="cap-gains">
       <div className="cap-gains__header">
-        <span className="cap-gains__title">📊 양도세 계산기</span>
+        <span className="cap-gains__title">양도세 계산기</span>
         <div className="cap-gains__header-controls">
           <div className="cap-gains__rate-row">
-            <span className="cap-gains__rate-label">💱 환율</span>
+            <span className="cap-gains__rate-label">환율</span>
             <span className="overseas-panel__sym">₩</span>
             <input
               type="number"

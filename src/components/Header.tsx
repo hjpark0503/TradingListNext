@@ -1,14 +1,17 @@
 'use client';
 
 import { useRef } from 'react';
+import { Market } from '@/lib/types';
 
 interface HeaderProps {
   onExport: () => void;
   onImport: (file: File) => void;
   hasEntries: boolean;
+  currentMarket: Market;
+  onMarketChange: (m: Market) => void;
 }
 
-export function Header({ onExport, onImport, hasEntries }: HeaderProps) {
+export function Header({ onExport, onImport, hasEntries, currentMarket, onMarketChange }: HeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,9 +25,23 @@ export function Header({ onExport, onImport, hasEntries }: HeaderProps) {
   return (
     <div className="header">
       <div className="header-left">
-        <h1>영차영차 주식 거래일지</h1>
+        <h1>영차영차 주식 거래일지 </h1>
       </div>
       <div className="header-right">
+        <div className="header-market">
+          <div className="seg-ctrl">
+            {(['domestic', 'overseas'] as Market[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={`seg-btn${currentMarket === m ? ' active' : ''}`}
+                onClick={() => onMarketChange(m)}
+              >
+                {m === 'domestic' ? '🇰🇷 국내' : '🌐 해외'}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="header-actions">
           <input
             type="file"
@@ -44,7 +61,7 @@ export function Header({ onExport, onImport, hasEntries }: HeaderProps) {
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            엑셀 불러오기
+            불러오기
           </button>
           <button
             type="button"
@@ -57,7 +74,7 @@ export function Header({ onExport, onImport, hasEntries }: HeaderProps) {
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            엑셀 내보내기
+            내보내기
           </button>
         </div>
       </div>

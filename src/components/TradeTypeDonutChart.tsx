@@ -149,7 +149,7 @@ export function TradeTypeDonutChart({ entries, market }: Props) {
 
   return (
     <div className="section">
-      <h2>📊 보유 종목 비중</h2>
+      <h2>보유 종목 비중</h2>
       <p className="chart-hint">평균단가 × 보유수량 기준 (매도 완료 종목 제외)</p>
       <div className="chart-wrap" style={{ height: 260 }}>
         <Doughnut data={chartData} options={options} plugins={[calloutPlugin]} />

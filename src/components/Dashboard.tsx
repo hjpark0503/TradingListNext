@@ -13,20 +13,20 @@ import { CapitalGainsTax } from './CapitalGainsTax';
 import { TradeTypeDonutChart } from './TradeTypeDonutChart';
 
 const CARDS = [
-  { id: 'buy',      label: '💳 매수',   valueColor: 'red' },
-  { id: 'sell',     label: '💰 매도',   valueColor: 'blue' },
-  { id: 'deposit',  label: '⬇️ 입금',   valueColor: 'teal' },
-  { id: 'withdraw', label: '⬆️ 출금',   valueColor: 'orange' },
-  { id: 'div',      label: '🎁 배당금', valueColor: 'green' },
+  { id: 'buy',      label: '매수',   valueColor: 'red' },
+  { id: 'sell',     label: '매도',   valueColor: 'blue' },
+  { id: 'deposit',  label: '입금',   valueColor: 'teal' },
+  { id: 'withdraw', label: '출금',   valueColor: 'orange' },
+  { id: 'div',      label: '배당금', valueColor: 'purple' },
 ];
 
 const TABS = [
-  { id: 'all',      label: '📋 전체' },
-  { id: 'buy',      label: '💳 매수' },
-  { id: 'sell',     label: '💰 매도' },
-  { id: 'deposit',  label: '⬇️ 입금' },
-  { id: 'withdraw', label: '⬆️ 출금' },
-  { id: 'div',      label: '🎁 배당금' },
+  { id: 'all',      label: '전체' },
+  { id: 'buy',      label: '매수' },
+  { id: 'sell',     label: '매도' },
+  { id: 'deposit',  label: '입금' },
+  { id: 'withdraw', label: '출금' },
+  { id: 'div',      label: '배당금' },
 ];
 
 const EMPTY_MSGS: Record<string, string> = {
@@ -37,6 +37,14 @@ const EMPTY_MSGS: Record<string, string> = {
   withdraw: '아직 출금 내역이 없습니다.',
   div: '아직 배당금 내역이 없습니다.',
 };
+
+function valueSize(val: string): string | undefined {
+  const n = val.length;
+  if (n <= 8)  return undefined;   // CSS default 1.6rem
+  if (n <= 11) return '1.25rem';
+  if (n <= 14) return '1.0rem';
+  return '0.875rem';
+}
 
 export default function Dashboard() {
   const { state, setExchangeRate, switchTab, switchMarket, addEntry, deleteEntry, updateEntry, loadEntries } = useDashboard();
@@ -88,7 +96,13 @@ export default function Dashboard() {
 
   return (
     <div>
-      <Header onExport={handleExport} onImport={handleImport} hasEntries={entries.length > 0} />
+      <Header
+        onExport={handleExport}
+        onImport={handleImport}
+        hasEntries={entries.length > 0}
+        currentMarket={currentMarket}
+        onMarketChange={(m) => switchMarket(m as Market)}
+      />
 
       <div className="main-layout">
 
@@ -102,23 +116,6 @@ export default function Dashboard() {
         {/* ── 우: 대시보드 ── */}
         <div className="dashboard-area">
 
-          {/* 국내/해외 마켓 토글 */}
-          <div className="market-squeezer">
-            <div className="seg-ctrl">
-              {(['domestic', 'overseas'] as Market[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  className={`seg-btn market-btn${currentMarket === m ? ' active' : ''}`}
-                  data-market={m}
-                  onClick={() => switchMarket(m)}
-                >
-                  {m === 'domestic' ? '🇰🇷 국내' : '🌐 해외'}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* 서머리 카드 */}
           <div className="cards">
             {CARDS.map((card) => (
@@ -130,7 +127,7 @@ export default function Dashboard() {
                 style={{ cursor: 'pointer' }}
               >
                 <div className="label">{card.label}</div>
-                <div className={`value ${card.valueColor}`}>{cardCount(card.id)}</div>
+                <div className={`value ${card.valueColor}`} style={{ fontSize: valueSize(cardCount(card.id)) }}>{cardCount(card.id)}</div>
                 <div className="note">{cardNote(card.id)}</div>
               </div>
             ))}
@@ -140,7 +137,7 @@ export default function Dashboard() {
               onClick={() => hasPLData && setShowPLDetail((v) => !v)}
               style={{ cursor: hasPLData ? 'pointer' : 'default' }}
             >
-              <div className="label">📈 실현손익</div>
+              <div className="label">실현손익</div>
               <div className={`value ${plCardColor()}`}>{plCardValue()}</div>
               <div className="note">
                 {realizedPL.hasIncompleteData
@@ -156,7 +153,7 @@ export default function Dashboard() {
           {showPLDetail && hasPLData && (
             <div className="pl-detail-panel">
               <div className="pl-detail-header">
-                <span>📊 실현손익 계산 내역</span>
+                <span>실현손익 계산 내역</span>
                 <span className="pl-detail-hint">가중평균 원가 = 총 매수금액 ÷ 총 매수수량</span>
               </div>
               <div className="pl-detail-table-wrap">
