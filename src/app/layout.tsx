@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "거래내역 대시보드",
-  description: "신한투자증권 해외주식 거래내역 대시보드",
+  title: "영차영차 투자일기",
+  description: "영차영차 투자일기",
 };
 
 export default function RootLayout({

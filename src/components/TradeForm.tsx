@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Entry, TradeType, Market } from '@/lib/types';
 
 interface TradeFormProps {
