@@ -317,7 +317,6 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
             <thead>
               <tr>
                 <th>거래일</th>
-                <th>종류</th>
                 <th>종목명</th>
                 <th>거래유형</th>
                 <th className="r">단가</th>
@@ -332,9 +331,6 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
               {list.map((e) => (
                 <tr key={e.id} className="entry-row entry-row--clickable" onClick={() => openEdit(e)}>
                   <td className="col-text date-cell">{e.date}</td>
-                  <td className="col-text">
-                    <span className={`mkt-badge mkt-${e.market}`}>{e.market === 'overseas' ? '해외' : '국내'}</span>
-                  </td>
                   <td className="col-text stock-cell">{e.stock || '—'}</td>
                   <td className="col-text">
                     <span className={`badge ${TYPE_CLASS[e.type]}`}>{TYPE_LABEL[e.type]}</span>
@@ -351,7 +347,7 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
             {panel !== 'all' && (
               <tfoot>
                 <tr>
-                  <td colSpan={6}>합계 ({list.length}건)</td>
+                  <td colSpan={5}>합계 ({list.length}건)</td>
                   <td className="r">{fmtNum(sumAmount, mkt)}</td>
                   <td className="r">{fmtNum(sumFee, mkt)}</td>
                   <td className="r">{fmtNum(sumTax, mkt)}</td>
