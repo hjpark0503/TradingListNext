@@ -7,6 +7,7 @@ import { EntryTable } from './EntryTable';
 import { Market, TradeType } from '@/lib/types';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
 import { formatUsd } from '@/lib/utils';
+import { calcRealizedPL } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { TradeTypeDonutChart } from './TradeTypeDonutChart';
 
@@ -42,6 +43,19 @@ export default function Dashboard() {
   const { exchangeRate, activeTab, currentMarket, entries } = state;
 
   const marketEntries = entries.filter((e) => e.market === currentMarket);
+
+  const realizedPL = calcRealizedPL(marketEntries);
+
+  function plCardValue() {
+    if (marketEntries.filter((e) => e.type === 'sell').length === 0) return '—';
+    const v = realizedPL.totalPL;
+    if (currentMarket === 'domestic') return `₩${Math.round(v).toLocaleString('ko-KR')}`;
+    return `$${formatUsd(v)}`;
+  }
+  function plCardColor() {
+    if (marketEntries.filter((e) => e.type === 'sell').length === 0) return 'text-muted';
+    return realizedPL.totalPL >= 0 ? 'pl-pos' : 'pl-neg';
+  }
 
   function cardCount(id: string) {
     const n = marketEntries.filter((e) => e.type === id).length;
@@ -137,6 +151,14 @@ export default function Dashboard() {
                 <div className="note">{cardNote(card.id)}</div>
               </div>
             ))}
+            {/* 실현손익 카드 */}
+            <div className="card card-stat card-pl">
+              <div className="label">📈 실현손익</div>
+              <div className={`value ${plCardColor()}`}>{plCardValue()}</div>
+              <div className="note">
+                {realizedPL.hasIncompleteData ? '⚠ 매수 데이터 부분 누락' : '가중평균 원가 기준'}
+              </div>
+            </div>
           </div>
 
           {/* 거래 유형별 도넛 차트 */}

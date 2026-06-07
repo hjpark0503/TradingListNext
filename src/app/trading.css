@@ -394,6 +394,14 @@ body[data-market="domestic"] #overseas-panel { display:none !important; }
 .card-stat    { cursor:default; }
 .card-stat:hover { transform:none; box-shadow:var(--shadow-sm); }
 
+.card-pl {
+  border-color: rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.92);
+}
+.card-pl .pl-pos { color:var(--buy)  !important; }
+.card-pl .pl-neg { color:var(--sell) !important; }
+.card-pl .text-muted { color:var(--text-muted) !important; }
+
 .card .label {
   font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
   color:var(--text-label); margin-bottom:8px;
