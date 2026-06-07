@@ -119,27 +119,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 해외: 환율 패널 */}
-          {currentMarket === 'overseas' && (
-            <div className="overseas-panel" id="overseas-panel">
-              <div className="overseas-panel__main">
-                <div className="overseas-panel__rate">
-                  <span className="overseas-panel__title">💱 환율</span>
-                  <div className="overseas-panel__rate-row">
-                    <span className="overseas-panel__sym">₩</span>
-                    <input
-                      type="number" id="exchangeRateInput" className="rate-input"
-                      value={exchangeRate} min={100} max={9999} step={1}
-                      aria-label="환율 (원/USD)"
-                      onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v) && v >= 100) setExchangeRate(v); }}
-                    />
-                    <span className="overseas-panel__unit">/ USD</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* 서머리 카드 */}
           <div className="cards">
             {CARDS.map((card) => (
@@ -276,7 +255,7 @@ export default function Dashboard() {
 
           {/* 해외: 양도세 계산기 */}
           {currentMarket === 'overseas' && (
-            <CapitalGainsTax entries={entries} exchangeRate={exchangeRate} />
+            <CapitalGainsTax entries={entries} exchangeRate={exchangeRate} setExchangeRate={setExchangeRate} />
           )}
 
         </div>

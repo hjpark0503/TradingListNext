@@ -719,6 +719,15 @@ tfoot td.r  { text-align:right; color:var(--text-primary); font-size:.81rem; }
 .cap-gains__title {
   font-size: .83rem; font-weight: 700; color: var(--text-secondary);
 }
+.cap-gains__header-controls {
+  display: flex; align-items: center; gap: 12px;
+}
+.cap-gains__rate-row {
+  display: flex; align-items: center; gap: 4px; font-size: .75rem; color: var(--text-secondary);
+}
+.cap-gains__rate-label {
+  font-weight: 600; margin-right: 4px;
+}
 .cap-gains__year-sel {
   width: auto; height: 30px; padding: 0 28px 0 10px; font-size: .75rem;
 }

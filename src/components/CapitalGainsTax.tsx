@@ -8,6 +8,7 @@ import { formatUsd } from '@/lib/utils';
 interface Props {
   entries: Entry[];
   exchangeRate: number;
+  setExchangeRate: (rate: number) => void;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -29,7 +30,7 @@ function plClass(n: number | null) {
   return n > 0 ? 'cg-pos' : n < 0 ? 'cg-neg' : '';
 }
 
-export function CapitalGainsTax({ entries, exchangeRate }: Props) {
+export function CapitalGainsTax({ entries, exchangeRate, setExchangeRate }: Props) {
   const availableYears = useMemo(() => {
     const years = new Set<number>([CURRENT_YEAR]);
     entries
@@ -42,6 +43,7 @@ export function CapitalGainsTax({ entries, exchangeRate }: Props) {
   }, [entries]);
 
   const [year, setYear] = useState(CURRENT_YEAR);
+  const [rateInput, setRateInput] = useState(String(exchangeRate));
 
   const summary = useMemo(
     () => calcCapitalGains(entries, year, exchangeRate),
@@ -52,15 +54,33 @@ export function CapitalGainsTax({ entries, exchangeRate }: Props) {
     <div className="cap-gains">
       <div className="cap-gains__header">
         <span className="cap-gains__title">📊 양도세 계산기</span>
-        <select
-          className="cap-gains__year-sel inp"
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-        >
-          {availableYears.map((y) => (
-            <option key={y} value={y}>{y}년</option>
-          ))}
-        </select>
+        <div className="cap-gains__header-controls">
+          <div className="cap-gains__rate-row">
+            <span className="cap-gains__rate-label">💱 환율</span>
+            <span className="overseas-panel__sym">₩</span>
+            <input
+              type="number"
+              className="rate-input"
+              value={rateInput}
+              min={100}
+              max={9999}
+              step={1}
+              aria-label="환율 (원/USD)"
+              onChange={(e) => { setRateInput(e.target.value); const v = parseFloat(e.target.value); if (!isNaN(v) && v >= 100) setExchangeRate(v); }}
+              onBlur={() => { const v = parseFloat(rateInput); if (isNaN(v) || v < 100) setRateInput(String(exchangeRate)); }}
+            />
+            <span className="overseas-panel__unit">/ USD</span>
+          </div>
+          <select
+            className="cap-gains__year-sel inp"
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+          >
+            {availableYears.map((y) => (
+              <option key={y} value={y}>{y}년</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {summary.rows.length === 0 ? (
