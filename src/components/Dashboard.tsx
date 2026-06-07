@@ -36,7 +36,7 @@ const EMPTY_MSGS: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { state, setExchangeRate, switchTab, switchMarket, addEntry, deleteEntry, loadEntries } = useDashboard();
+  const { state, setExchangeRate, switchTab, switchMarket, addEntry, deleteEntry, updateEntry, loadEntries } = useDashboard();
 
   const { exchangeRate, activeTab, currentMarket, entries } = state;
 
@@ -164,6 +164,7 @@ export default function Dashboard() {
                   panel={tab.id as TradeType | 'all'}
                   emptyMsg={EMPTY_MSGS[tab.id]}
                   onDelete={deleteEntry}
+                  onUpdate={updateEntry}
                 />
               </div>
             ))}

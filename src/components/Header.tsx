@@ -22,8 +22,7 @@ export function Header({ onExport, onImport, hasEntries }: HeaderProps) {
   return (
     <div className="header">
       <div className="header-left">
-        <div className="issuer-label">거래내역 대시보드</div>
-        <h1>주식 거래내역 대시보드</h1>
+        <h1>영차영차 주식 거래일지</h1>
       </div>
       <div className="header-right">
         <div className="header-actions">

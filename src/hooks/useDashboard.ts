@@ -63,6 +63,13 @@ export function useDashboard() {
     setState((prev) => ({ ...prev, entries: prev.entries.filter((e) => e.id !== id) }));
   }, []);
 
+  const updateEntry = useCallback((entry: Entry) => {
+    setState((prev) => ({
+      ...prev,
+      entries: prev.entries.map((e) => (e.id === entry.id ? entry : e)),
+    }));
+  }, []);
+
   const loadEntries = useCallback((entries: Entry[]) => {
     setState((prev) => ({ ...prev, entries, activeTab: 'all' }));
   }, []);
@@ -74,6 +81,7 @@ export function useDashboard() {
     switchMarket,
     addEntry,
     deleteEntry,
+    updateEntry,
     loadEntries,
   };
 }
