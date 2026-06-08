@@ -116,22 +116,9 @@ export default function Dashboard() {
         {/* ── 우: 대시보드 ── */}
         <div className="dashboard-area">
 
-          {/* 서머리 카드 */}
-          <div className="cards">
-            {CARDS.map((card) => (
-              <div
-                key={card.id}
-                className={`card${activeTab === card.id ? ' active' : ''}`}
-                data-tab={card.id}
-                onClick={() => switchTab(card.id)}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="label">{card.label}</div>
-                <div className={`value ${card.valueColor}`} style={{ fontSize: valueSize(cardCount(card.id)) }}>{cardCount(card.id)}</div>
-                <div className="note">{cardNote(card.id)}</div>
-              </div>
-            ))}
-            {/* 실현손익 카드 */}
+          {/* 실현손익 카드 + 내역 패널 + 서머리 카드 (5열 그리드) */}
+          <div className="summary-grid">
+            {/* 실현손익 카드 — 2열 차지 */}
             <div
               className={`card card-pl${hasPLData ? '' : ' card-stat'}${showPLDetail ? ' active' : ''}`}
               onClick={() => hasPLData && setShowPLDetail((v) => !v)}
@@ -147,73 +134,90 @@ export default function Dashboard() {
                   : '가중평균 원가 기준'}
               </div>
             </div>
-          </div>
+            {/* 나머지 3열 채우는 스페이서 (실현손익 아래 행에 서머리 카드가 오도록) */}
+            <div style={{ gridColumn: 'span 3' }} aria-hidden="true" />
 
-          {/* 실현손익 종목별 내역 패널 */}
-          {showPLDetail && hasPLData && (
-            <div className="pl-detail-panel">
-              <div className="pl-detail-header">
-                <span>실현손익 계산 내역</span>
-                <span className="pl-detail-hint">가중평균 원가 = 총 매수금액 ÷ 총 매수수량</span>
+            {/* 실현손익 계산 내역 패널 — 전체 너비 */}
+            {showPLDetail && hasPLData && (
+              <div className="pl-detail-panel">
+                <div className="pl-detail-header">
+                  <span>실현손익 계산 내역</span>
+                  <span className="pl-detail-hint">가중평균 원가 = 총 매수금액 ÷ 총 매수수량</span>
+                </div>
+                <div className="pl-detail-table-wrap">
+                  <table className="pl-detail-table">
+                    <thead>
+                      <tr>
+                        <th>종목</th>
+                        <th className="r">매도수량</th>
+                        <th className="r">가중평균 원가</th>
+                        <th className="r">매수원가 합계</th>
+                        <th className="r">매도금액</th>
+                        <th className="r">실현손익</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {realizedPL.rows.map((row) => {
+                        const fmt = (n: number) =>
+                          currentMarket === 'domestic'
+                            ? `₩${Math.round(n).toLocaleString('ko-KR')}`
+                            : `$${formatUsd(n)}`;
+                        return (
+                          <tr key={row.stock}>
+                            <td className="pl-detail-stock">{row.stock}</td>
+                            <td className="r">{row.sellQty.toLocaleString('en-US')}</td>
+                            {row.hasBuyData ? (
+                              <>
+                                <td className="r">{fmt(row.avgCostPerUnit)}</td>
+                                <td className="r">{fmt(row.buyCost)}</td>
+                                <td className="r">{fmt(row.sellProceeds)}</td>
+                                <td className={`r ${row.pl >= 0 ? 'pl-pos' : 'pl-neg'}`}>
+                                  {row.pl >= 0 ? '+' : '−'}{fmt(Math.abs(row.pl))}
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="r pl-na">—</td>
+                                <td className="r pl-na">—</td>
+                                <td className="r">{fmt(row.sellProceeds)}</td>
+                                <td className="r pl-na">매수 없음</td>
+                              </>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={5} className="r">합계</td>
+                        <td className={`r ${realizedPL.totalPL >= 0 ? 'pl-pos' : 'pl-neg'}`}>
+                          {realizedPL.totalPL >= 0 ? '+' : '−'}
+                          {currentMarket === 'domestic'
+                            ? `₩${Math.round(Math.abs(realizedPL.totalPL)).toLocaleString('ko-KR')}`
+                            : `$${formatUsd(Math.abs(realizedPL.totalPL))}`}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               </div>
-              <div className="pl-detail-table-wrap">
-                <table className="pl-detail-table">
-                  <thead>
-                    <tr>
-                      <th>종목</th>
-                      <th className="r">매도수량</th>
-                      <th className="r">가중평균 원가</th>
-                      <th className="r">매수원가 합계</th>
-                      <th className="r">매도금액</th>
-                      <th className="r">실현손익</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {realizedPL.rows.map((row) => {
-                      const fmt = (n: number) =>
-                        currentMarket === 'domestic'
-                          ? `₩${Math.round(n).toLocaleString('ko-KR')}`
-                          : `$${formatUsd(n)}`;
-                      return (
-                        <tr key={row.stock}>
-                          <td className="pl-detail-stock">{row.stock}</td>
-                          <td className="r">{row.sellQty.toLocaleString('en-US')}</td>
-                          {row.hasBuyData ? (
-                            <>
-                              <td className="r">{fmt(row.avgCostPerUnit)}</td>
-                              <td className="r">{fmt(row.buyCost)}</td>
-                              <td className="r">{fmt(row.sellProceeds)}</td>
-                              <td className={`r ${row.pl >= 0 ? 'pl-pos' : 'pl-neg'}`}>
-                                {row.pl >= 0 ? '+' : '−'}{fmt(Math.abs(row.pl))}
-                              </td>
-                            </>
-                          ) : (
-                            <>
-                              <td className="r pl-na">—</td>
-                              <td className="r pl-na">—</td>
-                              <td className="r">{fmt(row.sellProceeds)}</td>
-                              <td className="r pl-na">매수 없음</td>
-                            </>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan={5} className="r">합계</td>
-                      <td className={`r ${realizedPL.totalPL >= 0 ? 'pl-pos' : 'pl-neg'}`}>
-                        {realizedPL.totalPL >= 0 ? '+' : '−'}
-                        {currentMarket === 'domestic'
-                          ? `₩${Math.round(Math.abs(realizedPL.totalPL)).toLocaleString('ko-KR')}`
-                          : `$${formatUsd(Math.abs(realizedPL.totalPL))}`}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
+            )}
+
+            {/* 서머리 카드 5개 */}
+            {CARDS.map((card) => (
+              <div
+                key={card.id}
+                className={`card${activeTab === card.id ? ' active' : ''}`}
+                data-tab={card.id}
+                onClick={() => switchTab(card.id)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="label">{card.label}</div>
+                <div className={`value ${card.valueColor}`} style={{ fontSize: valueSize(cardCount(card.id)) }}>{cardCount(card.id)}</div>
+                <div className="note">{cardNote(card.id)}</div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
 
           {/* 거래 유형별 도넛 차트 */}
           <TradeTypeDonutChart entries={marketEntries} market={currentMarket} />

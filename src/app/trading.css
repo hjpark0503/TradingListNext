@@ -295,6 +295,14 @@ select.inp {
   grid-template-columns: repeat(auto-fill, minmax(145px,1fr));
   gap: 12px;
 }
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.summary-grid .pl-detail-panel {
+  grid-column: 1 / -1;
+}
 .card {
   position:relative; padding:20px 18px;
   background:var(--bg-surface);
@@ -308,7 +316,7 @@ select.inp {
 .card-stat   { cursor:default; }
 .card-stat:hover { box-shadow:var(--shadow-sm); }
 
-.card-pl { background:var(--bg-surface); }
+.card-pl { background:var(--bg-surface); grid-column: span 2; }
 .card-pl .pl-pos { color:var(--loss) !important; }
 .card-pl .pl-neg { color:var(--gain) !important; }
 .card-pl .text-muted { color:var(--text-muted) !important; }
@@ -753,6 +761,8 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .main-layout { grid-template-columns:1fr; }
   .form-aside  { position:static; }
   .cards { grid-template-columns:repeat(2,1fr); gap:10px; }
+  .summary-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+  .card-pl { grid-column: span 2; }
   .card .value { font-size:1.3rem; }
   .header-market { width:148px; }
 }
