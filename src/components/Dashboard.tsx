@@ -135,7 +135,7 @@ export default function Dashboard() {
               </div>
             </div>
             {/* 나머지 3열 채우는 스페이서 (실현손익 아래 행에 서머리 카드가 오도록) */}
-            <div style={{ gridColumn: 'span 3' }} aria-hidden="true" />
+            <div className="summary-grid-spacer" style={{ gridColumn: 'span 3' }} aria-hidden="true" />
 
             {/* 실현손익 계산 내역 패널 — 전체 너비 */}
             {showPLDetail && hasPLData && (

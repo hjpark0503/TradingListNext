@@ -61,7 +61,7 @@ export function Header({ onExport, onImport, hasEntries, currentMarket, onMarket
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            불러오기
+            <span className="btn-text">불러오기</span>
           </button>
           <button
             type="button"
@@ -74,7 +74,7 @@ export function Header({ onExport, onImport, hasEntries, currentMarket, onMarket
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            내보내기
+            <span className="btn-text">내보내기</span>
           </button>
         </div>
       </div>
