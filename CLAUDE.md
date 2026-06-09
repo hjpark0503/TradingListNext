@@ -19,33 +19,38 @@ Single-page Next.js app (`src/app/page.tsx`) that loads `Dashboard` dynamically 
 ### State management
 
 `useDashboard` (`src/hooks/useDashboard.ts`) is the single source of truth. It holds:
-- `entries: Entry[]` — all trade records (persisted only via Excel export/import)
+- `entries: Entry[]` — all trade records, persisted to `localStorage` (`tradinglist_entries`) and optionally exported/imported via Excel
 - `currentMarket: 'domestic' | 'overseas'` — which market tab is active
-- `activeTab` — which entry-type tab is shown in the table
-- `exchangeRate` — USD→KRW rate used by the capital gains calculator
+- `activeTab` — which entry-type tab is shown in the table (also highlights the matching summary card)
+- `exchangeRate` — USD→KRW rate, persisted to `localStorage` (`tradinglist_exchangeRate`)
 
 ### Data model
 
-`src/lib/types.ts` defines two families:
+`src/lib/types.ts` defines three types:
 
-- **`Entry`** — the canonical record used throughout the app. Has `market` (`domestic`/`overseas`), `type` (`buy`/`sell`/`deposit`/`withdraw`/`div`), amounts in the currency of that market.
-- **`TradeRow`** — legacy shape used by `parser.ts` / `calculations.ts` for the older PDF-parsing flow; still referenced by `BalanceChart` and `TradeTable`.
+- **`Market`** — `'overseas' | 'domestic'`
+- **`TradeType`** — `'buy' | 'sell' | 'deposit' | 'withdraw' | 'div'`
+- **`Entry`** — the single canonical record used throughout the app. Has `market`, `type`, `qty`, `price`, `fee`, `tax`, `amount`, `settlement`.
+
+Settlement is derived: buy = `amount + fee + tax`; sell = `amount - fee - tax`; deposit/withdraw/div = `amount`.
 
 ### Key libraries
 
 | File | Role |
 |---|---|
-| `src/lib/calculations.ts` | Weighted-average cost P&L (`calcRealizedPLRows`), capital-gains tax summary (`calcCapitalGains`) — 22% rate, ₩2.5M basic deduction |
-| `src/lib/excel.ts` | XLSX import/export (primary persistence mechanism) |
-| `src/lib/parser.ts` | Regex-based parser that turns raw text lines (from copy-paste or OCR) into `TradeRow[]` |
-| `src/lib/extractor.ts` | PDF text extraction via `pdfjs-dist`; falls back to Tesseract.js OCR for image-only PDFs |
-| `src/lib/utils.ts` | `formatUsd`, `parseNumberLoose`, `normalizeDateStr`, balance aggregation helpers |
+| `src/lib/calculations.ts` | `calcRealizedPL` — weighted-average cost P&L for a set of entries; `calcCapitalGains` — overseas capital-gains tax summary (22% rate, ₩2.5M basic deduction); `calcEstimatedTax` — quick tax estimate from a USD P&L total |
+| `src/lib/excel.ts` | XLSX import (`importEntriesFromExcel`) / export (`exportEntriesToExcel`); Korean column headers; detects market from `통화` column (`USD` → overseas) |
+| `src/lib/utils.ts` | `formatUsd`, `parseNumberLoose`, `normalizeDateStr` |
 
 ### Components
 
-`Dashboard` composes everything. The main layout is left (`TradeForm` — manual entry) and right (market toggle, exchange-rate input, summary cards, `EntryTable` with tabs, and `CapitalGainsTax` for overseas).
+`Dashboard` composes everything. Layout: left panel (`TradeForm` — manual entry), right panel (summary cards, `TradeTypeDonutChart`, `EntryTable` with tabs, `CapitalGainsTax` for overseas market only).
 
-`CapitalGainsTax` calls `calcCapitalGains` from `calculations.ts` and renders a per-stock breakdown plus tax summary for a selected year.
+`EntryTable` renders the trade table and opens an inline edit modal via `createPortal` on row click.
+
+`CapitalGainsTax` calls `calcCapitalGains` and renders a per-stock breakdown plus tax summary for a selected year.
+
+`TradeTypeDonutChart` uses `chart.js` / `react-chartjs-2` to visualise settlement totals by trade type.
 
 ### Styling
 
