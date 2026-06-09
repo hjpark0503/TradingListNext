@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
 import { TradeForm } from './TradeForm';
 import { EntryTable } from './EntryTable';
@@ -48,6 +49,7 @@ function valueSize(val: string): string | undefined {
 
 export default function Dashboard() {
   const { state, setExchangeRate, switchTab, switchMarket, addEntry, deleteEntry, updateEntry, loadEntries } = useDashboard();
+  const { isDark, toggle: toggleDark } = useDarkMode();
 
   const { exchangeRate, activeTab, currentMarket, entries } = state;
 
@@ -102,6 +104,8 @@ export default function Dashboard() {
         hasEntries={entries.length > 0}
         currentMarket={currentMarket}
         onMarketChange={(m) => switchMarket(m as Market)}
+        isDark={isDark}
+        onToggleDark={toggleDark}
       />
 
       <div className="main-layout">
@@ -220,7 +224,7 @@ export default function Dashboard() {
           </div>
 
           {/* 거래 유형별 도넛 차트 */}
-          <TradeTypeDonutChart entries={marketEntries} market={currentMarket} />
+          <TradeTypeDonutChart entries={marketEntries} market={currentMarket} isDark={isDark} />
 
           {/* 탭 거래내역 */}
           <div className="section">

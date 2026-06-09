@@ -66,6 +66,33 @@
   --orange:   var(--out-color);
 }
 
+/* ── 다크모드 토큰 ── */
+[data-theme="dark"] {
+  --bg-base:        #0F1117;
+  --bg-surface:     #1A1D27;
+  --bg-input:       #252836;
+
+  --text-primary:   #F0F4F8;
+  --text-secondary: #A8B3C1;
+  --text-muted:     #5C6778;
+  --text-label:     #8B95A1;
+
+  --brand:          #4D94FF;
+  --brand-soft:     #192844;
+
+  --loss-soft:      #2A1520;
+  --gain-soft:      #192844;
+
+  --in-soft:        #0D2B24;
+  --out-soft:       #2D2212;
+  --div-soft:       #1C1535;
+
+  --shadow-sm:  0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.55);
+
+  --border:     #2A2F3E;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    2. RESET & BASE
    ══════════════════════════════════════════════════════════════════ */
@@ -802,3 +829,52 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   /* 실현손익 내역 헤더 줄바꿈 */
   .pl-detail-header { flex-wrap:wrap; gap:6px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   17. DARK MODE OVERRIDES (하드코딩 색상)
+   ══════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] .header { background: var(--bg-surface); }
+
+[data-theme="dark"] .seg-btn.active {
+  background: #0F1117;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+[data-theme="dark"] tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+[data-theme="dark"] .inp:focus {
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 3px rgba(77,148,255,0.18);
+}
+
+[data-theme="dark"] .btn-secondary:hover { background: #30354A; }
+[data-theme="dark"] .btn-ghost:hover     { background: var(--bg-input); }
+[data-theme="dark"] .type-btn            { color: #C5CDD8; }
+[data-theme="dark"] .type-btn:hover      { background: #30354A; color: #E2E8F0; }
+[data-theme="dark"] .type-btn.active     { color: #FFFFFF; font-weight: 700; }
+[data-theme="dark"] .seg-btn            { color: #C5CDD8; }
+[data-theme="dark"] .seg-btn:hover      { color: #E2E8F0; }
+[data-theme="dark"] .seg-btn.active     { color: #FFFFFF; }
+
+[data-theme="dark"] .btn-danger:hover { background: #3D1825; }
+[data-theme="dark"] .btn-del:hover    { background: var(--loss-soft); }
+
+[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,0.72); }
+
+[data-theme="dark"] .pl-incomplete { background: rgba(255,255,255,0.08); }
+[data-theme="dark"] .currency-hint { background: rgba(255,255,255,0.08); }
+
+[data-theme="dark"] ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+/* 다크모드 토글 버튼 */
+.btn-dark-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border: none; border-radius: var(--r-sm);
+  background: var(--bg-input); color: var(--text-muted);
+  cursor: pointer; transition: background .15s, color .15s;
+  flex-shrink: 0;
+}
+.btn-dark-toggle:hover { background: var(--border); color: var(--text-primary); }
