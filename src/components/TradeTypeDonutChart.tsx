@@ -96,7 +96,7 @@ export function TradeTypeDonutChart({ entries, market, isDark }: Props) {
 
         const pct = ((data[i] / total) * 100).toFixed(1);
         ctx.font = '600 10.5px Pretendard, sans-serif';
-        ctx.fillStyle = isDark ? '#A8B3C1' : '#374151';
+        ctx.fillStyle = isDark ? '#E2E8F0' : '#374151';
         ctx.textAlign = isRight ? 'left' : 'right';
         ctx.textBaseline = 'middle';
         ctx.fillText(`${labels[i]}  ${pct}%`, x3 + (isRight ? 4 : -4), y3);
