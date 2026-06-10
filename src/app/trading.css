@@ -582,6 +582,14 @@ select.inp {
 @media (max-width: 860px) {
   .holdings-row {
     grid-template-columns: 1fr;
+    height: auto;
+  }
+  .holdings-row > .section {
+    height: auto;
+  }
+  .holdings-row > .holdings-list {
+    height: auto;
+    max-height: 360px;
   }
 }
 

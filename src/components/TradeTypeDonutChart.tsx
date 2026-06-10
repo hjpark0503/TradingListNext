@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import type { Entry, Market } from '@/lib/types';
@@ -53,6 +53,18 @@ interface Props {
 }
 
 export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pricesFetched = false }: Props) {
+  const [isNarrow, setIsNarrow] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setIsNarrow(entry.contentRect.width < 480);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const holdings = useMemo(() => {
     const base = calcHoldings(entries);
     if (!pricesFetched) return base;
@@ -146,7 +158,9 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
     maintainAspectRatio: false,
     cutout: '58%',
     layout: {
-      padding: { top: 28, bottom: 28, left: 120, right: 120 },
+      padding: isNarrow
+        ? { top: 36, bottom: 36, left: 80, right: 80 }
+        : { top: 28, bottom: 28, left: 120, right: 120 },
     },
     plugins: {
       legend: { display: false },
@@ -168,10 +182,10 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
   };
 
   return (
-    <div className="section">
+    <div className="section" ref={containerRef}>
       <h2>보유 종목 비중</h2>
       <p className="chart-hint">
-        {pricesFetched ? '현재가 × 보유수량 기준' : '평균단가 × 보유수량 기준'} (매도 완료 종목 제외)
+        {pricesFetched ? '현재가 × 보유수량 기준' : '평균단가 × 보유수량 기준'}
       </p>
       <div className="chart-wrap" style={{ height: 260 }}>
         <Doughnut data={chartData} options={options} plugins={[calloutPlugin]} />
