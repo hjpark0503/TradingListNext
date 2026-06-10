@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Entry, TradeType, Market } from '@/lib/types';
 import { calcRealizedPL } from '@/lib/calculations';
+import { StockInput } from './StockInput';
 
 const TYPE_LABEL: Record<TradeType, string> = {
   buy: '매수', sell: '매도', deposit: '입금', withdraw: '출금', div: '배당금',
@@ -203,9 +204,13 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
 
           <div className="field" style={{ opacity: isCash ? 0.35 : 1 }}>
             <label className="field-label">종목명</label>
-            <input type="text" className="inp" placeholder="예) APPLE INC / 삼성전자"
-              disabled={isCash} value={d.stock}
-              onChange={(e) => setDraft({ ...d, stock: e.target.value })} />
+            <StockInput
+              value={d.stock}
+              onChange={(v) => setDraft({ ...d, stock: v })}
+              market={d.market}
+              disabled={isCash}
+              placeholder={d.market === 'overseas' ? '예) Apple Inc / AAPL' : '예) 삼성전자'}
+            />
           </div>
 
           <div className="field">

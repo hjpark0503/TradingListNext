@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Entry, TradeType, Market } from '@/lib/types';
+import { StockInput } from './StockInput';
 
 interface TradeFormProps {
   market: Market;
@@ -206,12 +207,12 @@ export function TradeForm({ market, onMarketChange, onAdd }: TradeFormProps) {
           {/* 종목명 */}
           <div className="field" style={{ opacity: isCash ? 0.35 : 1 }}>
             <label className="field-label" htmlFor="inp-stock">종목명</label>
-            <input
-              type="text" id="inp-stock" className="inp"
-              placeholder="예) APPLE INC / 삼성전자"
-              disabled={isCash}
+            <StockInput
               value={stock}
-              onChange={(e) => setStock(e.target.value)}
+              onChange={setStock}
+              market={market}
+              disabled={isCash}
+              placeholder={market === 'overseas' ? '예) Apple Inc / AAPL' : '예) 삼성전자'}
             />
           </div>
 

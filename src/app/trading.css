@@ -186,7 +186,6 @@ body {
   background: var(--bg-surface);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-md);
-  overflow: hidden;
   animation: slideIn .35s ease both;
 }
 
@@ -302,6 +301,81 @@ select.inp {
 }
 .calc-row.highlight .calc-value { color:var(--brand); }
 .calc-divider { height:1px; background:rgba(49,130,246,.14); }
+
+/* ── 종목명 자동완성 ── */
+.stock-input-wrap {
+  position: relative;
+  z-index: 10;
+}
+
+.stock-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  list-style: none;
+  padding: 4px 0;
+  z-index: 200;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.stock-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: background .1s;
+}
+.stock-dropdown__item:hover,
+.stock-dropdown__item.active {
+  background: var(--brand-soft);
+}
+.stock-dropdown__item.active .stock-dropdown__name {
+  color: var(--brand);
+}
+
+.stock-dropdown__name {
+  flex: 1;
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stock-dropdown__code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  color: var(--text-muted);
+  letter-spacing: -.01em;
+  flex-shrink: 0;
+}
+
+.stock-mkt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: var(--r-xs);
+  font-size: .68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--bg-input);
+  color: var(--text-muted);
+}
+.stock-mkt-badge--kospi  { background: var(--in-soft);   color: var(--in-color); }
+.stock-mkt-badge--kosdaq { background: var(--brand-soft); color: var(--brand); }
+.stock-mkt-badge--nyse   { background: var(--out-soft);   color: var(--out-color); }
+.stock-mkt-badge--nasdaq { background: var(--div-soft);   color: var(--div-color); }
+
+[data-theme="dark"] .stock-dropdown { background: var(--bg-surface); }
+[data-theme="dark"] .stock-dropdown__item:hover,
+[data-theme="dark"] .stock-dropdown__item.active { background: rgba(77,148,255,.12); }
 
 .form-footer {
   display:flex; align-items:center; justify-content:space-between;
