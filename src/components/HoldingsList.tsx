@@ -116,10 +116,10 @@ export function HoldingsList({ entries, market, prices, fetched, loading, onFetc
                     {hasCp ? fmt(cp) : '—'}
                   </td>
                   <td className={`r ${plClass}`}>
-                    {unrealizedPL == null ? '—' : fmtPL(unrealizedPL)}
+                    {unrealizedPL == null ? '—' : `${unrealizedPL >= 0 ? '+' : ''}${fmtPL(unrealizedPL)}`}
                   </td>
                   <td className={`r ${plClass}`}>
-                    {returnRate == null ? '—' : `${returnRate.toFixed(2)}%`}
+                    {returnRate == null ? '—' : `${returnRate >= 0 ? '+' : ''}${returnRate.toFixed(2)}%`}
                   </td>
                 </tr>
               );
