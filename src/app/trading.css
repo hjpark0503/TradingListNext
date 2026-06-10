@@ -487,6 +487,105 @@ select.inp {
 .chart-wrap--tall canvas { width:100% !important; height:100% !important; }
 
 /* ══════════════════════════════════════════════════════════════════
+   8-B. HOLDINGS ROW (보유 종목 비중 + 내역 나란히)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* summary-grid와 동일한 5열 기준: 비중 2칸(2fr) / 내역 3칸(3fr) */
+.holdings-row {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 12px;
+  align-items: start;       /* 차트 카드 높이를 기준으로 */
+  height: 360px;            /* 두 카드 높이 고정 */
+}
+.holdings-row > .section {
+  min-width: 0;
+  height: 100%;             /* 부모 높이 채우기 */
+  box-sizing: border-box;
+}
+
+/* 보유 종목 내역: flex column으로 내부 스크롤 지원 */
+.holdings-list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 보유 종목 내역 카드 헤더 */
+.holdings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.holdings-header h2 {
+  padding: 0;
+}
+
+.holdings-refresh-btn {
+  font-size: .78rem;
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--brand);
+}
+.holdings-refresh-btn:hover { color: var(--text-primary); }
+.holdings-refresh-btn:disabled { opacity: .5; cursor: default; }
+
+/* 보유 종목 내역 테이블: 남은 높이 차지 + 세로 스크롤 */
+.holdings-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 0;
+  min-height: 0;
+}
+.holdings-table {
+  min-width: 0;
+  width: 100%;
+}
+.holdings-table thead th {
+  padding: 6px 12px;
+}
+.holdings-table tbody td {
+  padding: 10px 12px;
+}
+.holdings-table thead th:first-child,
+.holdings-table tbody td:first-child { padding-left: 16px; }
+.holdings-table thead th:last-child,
+.holdings-table tbody td:last-child  { padding-right: 16px; }
+
+/* thead를 sticky로 고정 */
+.holdings-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-surface);
+  z-index: 1;
+}
+
+.holdings-no {
+  color: var(--text-muted);
+  font-size: .75rem;
+  font-family: 'JetBrains Mono', monospace;
+  width: 28px;
+  text-align: center;
+}
+.holdings-stock {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -.02em;
+}
+
+@media (max-width: 860px) {
+  .holdings-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
    9. TAB BAR
    ══════════════════════════════════════════════════════════════════ */
 .tab-bar {
@@ -535,7 +634,7 @@ thead th {
   color:var(--text-muted); background:transparent;
   border-bottom:1px solid var(--border); white-space:nowrap;
 }
-thead th.r { text-align:right; }
+thead th.r { text-align:right; font-size:.75rem; }
 
 tbody tr {
   border-bottom:1px solid var(--border);

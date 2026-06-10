@@ -48,10 +48,20 @@ interface Props {
   entries: Entry[];
   market: Market;
   isDark: boolean;
+  prices?: Record<string, number | null>;
+  pricesFetched?: boolean;
 }
 
-export function TradeTypeDonutChart({ entries, market, isDark }: Props) {
-  const holdings = useMemo(() => calcHoldings(entries), [entries]);
+export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pricesFetched = false }: Props) {
+  const holdings = useMemo(() => {
+    const base = calcHoldings(entries);
+    if (!pricesFetched) return base;
+    // 현재가가 조회된 경우 현재가 × 수량으로 재계산
+    return base.map((h) => {
+      const cp = prices[h.stock];
+      return cp != null ? { ...h, value: cp * h.qty } : h;
+    });
+  }, [entries, prices, pricesFetched]);
 
   const calloutPlugin = useMemo(() => ({
     id: 'calloutLabels',
@@ -62,6 +72,7 @@ export function TradeTypeDonutChart({ entries, market, isDark }: Props) {
       const labels = chart.data.labels as string[];
       const colors = chart.data.datasets[0].backgroundColor as string[];
       const total = data.reduce((a: number, b: number) => a + b, 0);
+      const chartWidth: number = chart.width;
 
       ctx.save();
       meta.data.forEach((arc: any, i: number) => {
@@ -81,9 +92,9 @@ export function TradeTypeDonutChart({ entries, market, isDark }: Props) {
 
         const x1 = x + cos * (outerRadius + 4);
         const y1 = y + sin * (outerRadius + 4);
-        const x2 = x + cos * (outerRadius + 22);
-        const y2 = y + sin * (outerRadius + 22);
-        const x3 = x2 + (isRight ? 18 : -18);
+        const x2 = x + cos * (outerRadius + 18);
+        const y2 = y + sin * (outerRadius + 18);
+        const x3 = x2 + (isRight ? 14 : -14);
         const y3 = y2;
 
         ctx.beginPath();
@@ -95,11 +106,19 @@ export function TradeTypeDonutChart({ entries, market, isDark }: Props) {
         ctx.stroke();
 
         const pct = ((data[i] / total) * 100).toFixed(1);
-        ctx.font = '600 10.5px Pretendard, sans-serif';
+        const rawLabel = labels[i] as string;
+        const label = rawLabel.length > 8 ? rawLabel.slice(0, 7) + '…' : rawLabel;
+        const text = `${label}  ${pct}%`;
+
+        ctx.font = '600 10px Pretendard, sans-serif';
         ctx.fillStyle = isDark ? '#E2E8F0' : '#374151';
         ctx.textAlign = isRight ? 'left' : 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`${labels[i]}  ${pct}%`, x3 + (isRight ? 4 : -4), y3);
+
+        const textX = x3 + (isRight ? 4 : -4);
+        // canvas 경계를 넘지 않도록 maxWidth 적용
+        const maxWidth = isRight ? chartWidth - textX - 2 : textX - 2;
+        ctx.fillText(text, textX, y3, Math.max(maxWidth, 10));
       });
       ctx.restore();
     },
@@ -127,7 +146,7 @@ export function TradeTypeDonutChart({ entries, market, isDark }: Props) {
     maintainAspectRatio: false,
     cutout: '58%',
     layout: {
-      padding: { top: 28, bottom: 28, left: 90, right: 90 },
+      padding: { top: 28, bottom: 28, left: 120, right: 120 },
     },
     plugins: {
       legend: { display: false },
@@ -151,7 +170,9 @@ export function TradeTypeDonutChart({ entries, market, isDark }: Props) {
   return (
     <div className="section">
       <h2>보유 종목 비중</h2>
-      <p className="chart-hint">평균단가 × 보유수량 기준 (매도 완료 종목 제외)</p>
+      <p className="chart-hint">
+        {pricesFetched ? '현재가 × 보유수량 기준' : '평균단가 × 보유수량 기준'} (매도 완료 종목 제외)
+      </p>
       <div className="chart-wrap" style={{ height: 260 }}>
         <Doughnut data={chartData} options={options} plugins={[calloutPlugin]} />
       </div>

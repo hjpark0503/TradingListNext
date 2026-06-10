@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
@@ -12,6 +12,7 @@ import { formatUsd } from '@/lib/utils';
 import { calcRealizedPL } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { TradeTypeDonutChart } from './TradeTypeDonutChart';
+import { HoldingsList } from './HoldingsList';
 
 const CARDS = [
   { id: 'buy',      label: '매수',   valueColor: 'red' },
@@ -57,6 +58,55 @@ export default function Dashboard() {
 
   const realizedPL = calcRealizedPL(marketEntries);
   const [showPLDetail, setShowPLDetail] = useState(false);
+
+  // 보유 종목 현재가 (HoldingsList ↔ TradeTypeDonutChart 공유)
+  const [holdingPrices, setHoldingPrices] = useState<Record<string, number | null>>({});
+  const [pricesFetched, setPricesFetched] = useState(false);
+  const [pricesLoading, setPricesLoading] = useState(false);
+  const pricesLoadingRef = useRef(false);
+
+  useEffect(() => {
+    setHoldingPrices({});
+    setPricesFetched(false);
+    setPricesLoading(false);
+    pricesLoadingRef.current = false;
+  }, [currentMarket]);
+
+  // pricesLoading을 deps에서 제거해 함수가 안정적으로 유지되도록 ref로 guard
+  const fetchHoldingPrices = useCallback(async (holdings: { stock: string }[]) => {
+    if (pricesLoadingRef.current || holdings.length === 0) return;
+    pricesLoadingRef.current = true;
+    setPricesLoading(true);
+    const results: Record<string, number | null> = {};
+    await Promise.all(
+      holdings.map(async (h) => {
+        try {
+          const searchRes = await fetch(
+            `/api/stocks?q=${encodeURIComponent(h.stock)}&market=${currentMarket}`
+          );
+          if (!searchRes.ok) { results[h.stock] = null; return; }
+          const candidates: { name: string; code: string }[] = await searchRes.json();
+          const match = candidates.find((s) => s.name === h.stock) ?? candidates[0];
+          if (!match) { results[h.stock] = null; return; }
+          const priceRes = await fetch(
+            `/api/stocks/price?code=${encodeURIComponent(match.code)}&market=${currentMarket}`
+          );
+          if (priceRes.ok) {
+            const data = await priceRes.json();
+            results[h.stock] = typeof data.price === 'number' ? data.price : null;
+          } else {
+            results[h.stock] = null;
+          }
+        } catch {
+          results[h.stock] = null;
+        }
+      })
+    );
+    setHoldingPrices(results);
+    setPricesFetched(true);
+    pricesLoadingRef.current = false;
+    setPricesLoading(false);
+  }, [currentMarket]);
 
   const hasPLData = realizedPL.rows.length > 0;
 
@@ -223,8 +273,24 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* 거래 유형별 도넛 차트 */}
-          <TradeTypeDonutChart entries={marketEntries} market={currentMarket} isDark={isDark} />
+          {/* 보유 종목 비중 + 보유 종목 내역 */}
+          <div className="holdings-row">
+            <TradeTypeDonutChart
+              entries={marketEntries}
+              market={currentMarket}
+              isDark={isDark}
+              prices={holdingPrices}
+              pricesFetched={pricesFetched}
+            />
+            <HoldingsList
+              entries={marketEntries}
+              market={currentMarket}
+              prices={holdingPrices}
+              fetched={pricesFetched}
+              loading={pricesLoading}
+              onFetch={fetchHoldingPrices}
+            />
+          </div>
 
           {/* 탭 거래내역 */}
           <div className="section">
