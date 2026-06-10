@@ -49,22 +49,22 @@ export function calcCapitalGains(
       avgCostMap[key] = costAccum[key].totalCost / costAccum[key].totalQty;
   }
 
-  const sellAccum: Record<string, { qty: number; proceeds: number }> = {};
+  const sellAccum: Record<string, { qty: number; proceeds: number; label: string }> = {};
   for (const s of yearSells) {
     const key = s.stock.trim().toUpperCase();
-    if (!sellAccum[key]) sellAccum[key] = { qty: 0, proceeds: 0 };
+    if (!sellAccum[key]) sellAccum[key] = { qty: 0, proceeds: 0, label: s.stock.trim() };
     sellAccum[key].qty += s.qty;
     sellAccum[key].proceeds += s.settlement;
   }
 
-  const rows: CapGainRow[] = Object.entries(sellAccum).map(([stock, { qty, proceeds }]) => {
-    const avgCost = avgCostMap[stock];
+  const rows: CapGainRow[] = Object.entries(sellAccum).map(([key, { qty, proceeds, label }]) => {
+    const avgCost = avgCostMap[key];
     if (avgCost !== undefined) {
       const buyCostUsd = avgCost * qty;
       const plUsd = proceeds - buyCostUsd;
-      return { stock, sellQty: qty, sellProceedsUsd: proceeds, buyCostUsd, plUsd, plKrw: plUsd * exchangeRate, hasBuyData: true };
+      return { stock: label, sellQty: qty, sellProceedsUsd: proceeds, buyCostUsd, plUsd, plKrw: plUsd * exchangeRate, hasBuyData: true };
     }
-    return { stock, sellQty: qty, sellProceedsUsd: proceeds, buyCostUsd: null, plUsd: null, plKrw: null, hasBuyData: false };
+    return { stock: label, sellQty: qty, sellProceedsUsd: proceeds, buyCostUsd: null, plUsd: null, plKrw: null, hasBuyData: false };
   });
 
   const hasIncompleteData = rows.some((r) => !r.hasBuyData);
