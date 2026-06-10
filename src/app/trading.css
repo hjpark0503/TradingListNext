@@ -111,7 +111,7 @@ body {
 ::-webkit-scrollbar-thumb  { background:rgba(0,0,0,0.13); border-radius:var(--r-pill); }
 ::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,0.22); }
 
-.mono,.r,tfoot td { font-family:'JetBrains Mono','Courier New',monospace; font-size:.875rem; letter-spacing:-.02em; }
+.mono,.r,tfoot td { font-family:'Pretendard',sans-serif; font-size:.875rem; letter-spacing:-.02em; }
 .c { text-align:center !important; }
 
 @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -228,7 +228,7 @@ body {
 }
 .inp:focus { border-color:var(--brand); background:#fff; box-shadow:0 0 0 3px rgba(49,130,246,.10); }
 .inp:disabled { opacity:.4; cursor:not-allowed; }
-.inp-num { font-family:'JetBrains Mono',monospace; }
+.inp-num { font-family:'Pretendard',sans-serif; }
 .inp-prefixed { padding-left:24px; }
 
 select.inp {
@@ -296,7 +296,7 @@ select.inp {
 .calc-label > span:first-child { font-size:.80rem; font-weight:600; color:var(--text-secondary); }
 .calc-formula { display:none; }
 .calc-value {
-  font-family:'JetBrains Mono',monospace; font-size:1.0rem; font-weight:700;
+  font-family:'Pretendard',sans-serif; font-size:1.0rem; font-weight:700;
   color:var(--text-primary); white-space:nowrap;
 }
 .calc-row.highlight .calc-value { color:var(--brand); }
@@ -349,7 +349,7 @@ select.inp {
   text-overflow: ellipsis;
 }
 .stock-dropdown__code {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Pretendard', sans-serif;
   font-size: .78rem;
   color: var(--text-muted);
   letter-spacing: -.01em;
@@ -445,7 +445,7 @@ select.inp {
 .pl-detail-table thead th { font-size: .75rem; }
 .pl-detail-stock {
   font-weight: 700; color: var(--text-primary) !important;
-  font-family: 'JetBrains Mono', monospace; letter-spacing: -.02em;
+  font-family: 'Pretendard', sans-serif; letter-spacing: -.02em;
 }
 
 .card .label {
@@ -453,8 +453,8 @@ select.inp {
   color:var(--text-muted); margin-bottom:10px;
 }
 .card .value {
-  font-family:'JetBrains Mono',monospace; font-size:1.6rem; font-weight:700;
-  letter-spacing:-.04em; color:var(--text-primary); margin-bottom:6px; line-height:1.2;
+  font-family:'Pretendard',sans-serif; font-size:1.6rem; font-weight:700;
+  letter-spacing:-.02em; color:var(--text-primary); margin-bottom:6px; line-height:1.2;
   white-space: nowrap; overflow: hidden;
 }
 .card .note {
@@ -568,14 +568,14 @@ select.inp {
 .holdings-no {
   color: var(--text-muted);
   font-size: .75rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Pretendard', sans-serif;
   width: 28px;
   text-align: center;
 }
 .holdings-stock {
   font-weight: 700;
   color: var(--text-primary);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Pretendard', sans-serif;
   letter-spacing: -.02em;
 }
 
@@ -651,7 +651,7 @@ tbody td {
 }
 tbody td.r {
   text-align:right; color:var(--text-primary);
-  font-family:'JetBrains Mono',monospace;
+  font-family:'Pretendard',sans-serif;
   font-size:.875rem; letter-spacing:-.02em;
 }
 
@@ -696,7 +696,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 }
 
 .type-summary-settle {
-  font-family: 'JetBrains Mono','Courier New',monospace;
+  font-family: 'Pretendard', sans-serif;
   font-size: .875rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -718,7 +718,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 }
 
 .pl-val {
-  font-family: 'JetBrains Mono','Courier New',monospace;
+  font-family: 'Pretendard', sans-serif;
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: -.02em;
@@ -781,7 +781,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   line-height:1.4;
 }
 .tab-panel tbody td.col-text.date-cell {
-  font-family:'JetBrains Mono',monospace !important;
+  font-family:'Pretendard',sans-serif !important;
 }
 .tab-panel tbody td.col-text .badge,
 .tab-panel tbody td.col-text .mkt-badge {
@@ -841,7 +841,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 .cap-gains__table thead th { font-size: .75rem; }
 .cap-gains__stock {
   font-weight: 700; color: var(--text-primary) !important;
-  font-family: 'JetBrains Mono', monospace; letter-spacing: -.02em;
+  font-family: 'Pretendard', sans-serif; letter-spacing: -.02em;
 }
 .cap-gains__no-data { font-size: .75rem; color: var(--text-muted); font-style: italic; }
 
@@ -866,7 +866,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 }
 .cap-gains__sum-label { font-size: .875rem; color: var(--text-secondary); }
 .cap-gains__sum-val {
-  font-family: 'JetBrains Mono', monospace; font-size: .875rem; font-weight: 600;
+  font-family: 'Pretendard', sans-serif; font-size: .875rem; font-weight: 600;
   color: var(--text-primary);
 }
 .cap-gains__sum-deduct { color: var(--text-muted); font-weight: 500; }

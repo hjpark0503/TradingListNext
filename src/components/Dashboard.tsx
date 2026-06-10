@@ -123,11 +123,10 @@ export default function Dashboard() {
 
   function cardCount(id: string) {
     const n = marketEntries.filter((e) => e.type === id).length;
-    return n ? `${n}건` : '—';
+    return `${n}건`;
   }
   function cardNote(id: string) {
     const filtered = marketEntries.filter((e) => e.type === id);
-    if (!filtered.length) return '—';
     const total = filtered.reduce((s, e) => s + e.settlement, 0);
     if (currentMarket === 'domestic') return `총 ₩${Math.round(total).toLocaleString('ko-KR')}`;
     return `총 $${formatUsd(total)}`;
