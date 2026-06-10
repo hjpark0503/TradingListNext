@@ -51,7 +51,8 @@ export function Header({ onExport, onImport, hasEntries, currentMarket, onMarket
   return (
     <div className="header">
       <div className="header-left">
-        <h1>영차영차 주식 거래일지 </h1>
+        <h1>영차영차 주식 거래일지</h1>
+        <span className="app-version">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
       </div>
       <div className="header-right">
         <div className="header-market">

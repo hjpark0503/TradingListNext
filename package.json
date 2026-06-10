@@ -1,12 +1,13 @@
 {
   "name": "trading-list-next",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "node scripts/bump-version.js && vercel --prod"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

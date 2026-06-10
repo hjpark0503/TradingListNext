@@ -64,6 +64,11 @@ export function HoldingsList({ entries, market, prices, fetched, loading, onFetc
       ? `₩${Math.round(n).toLocaleString('ko-KR')}`
       : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  const fmtPL = (n: number) => {
+    const abs = Math.abs(n);
+    return n < 0 ? `-${fmt(abs)}` : fmt(abs);
+  };
+
   return (
     <div className="section holdings-list">
       <div className="holdings-header">
@@ -111,14 +116,10 @@ export function HoldingsList({ entries, market, prices, fetched, loading, onFetc
                     {hasCp ? fmt(cp) : '—'}
                   </td>
                   <td className={`r ${plClass}`}>
-                    {unrealizedPL == null
-                      ? '—'
-                      : `${unrealizedPL >= 0 ? '+' : ''}${fmt(unrealizedPL)}`}
+                    {unrealizedPL == null ? '—' : fmtPL(unrealizedPL)}
                   </td>
                   <td className={`r ${plClass}`}>
-                    {returnRate == null
-                      ? '—'
-                      : `${returnRate >= 0 ? '+' : ''}${returnRate.toFixed(2)}%`}
+                    {returnRate == null ? '—' : `${returnRate.toFixed(2)}%`}
                   </td>
                 </tr>
               );

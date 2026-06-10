@@ -131,13 +131,24 @@ body {
   background: #FFFFFF;
   border-bottom: 1px solid var(--border);
 }
-.header-left  { min-width:0; }
+.header-left  { min-width:0; display:flex; align-items:center; gap:8px; }
 .header-right { display:flex; align-items:center; gap:12px; }
 .header-actions { display:flex; align-items:center; gap:8px; }
 
 .header h1 {
   font-size:1.0rem; font-weight:700; letter-spacing:-.02em;
   color:var(--text-primary); line-height:1.2;
+}
+
+.app-version {
+  font-size:.68rem; font-weight:500;
+  color:var(--text-tertiary);
+  background:var(--bg-hover);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:1px 6px;
+  letter-spacing:.02em;
+  white-space:nowrap;
 }
 
 /* 헤더 마켓 토글 */
