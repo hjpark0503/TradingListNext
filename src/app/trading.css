@@ -560,13 +560,21 @@ select.inp {
 .holdings-table thead th {
   padding: 6px 12px;
 }
+.holdings-table thead th:first-child { text-align: center; }
 .holdings-table tbody td {
   padding: 10px 12px;
+  vertical-align: top;
 }
 .holdings-table thead th:first-child,
 .holdings-table tbody td:first-child { padding-left: 16px; }
 .holdings-table thead th:last-child,
 .holdings-table tbody td:last-child  { padding-right: 16px; }
+.holdings-table thead th:nth-child(2),
+.holdings-table tbody td:nth-child(2) { padding-right: 0; }
+.holdings-table thead th:nth-child(3),
+.holdings-table tbody td:nth-child(3) { padding-left: 2px; }
+.holdings-table tbody td:nth-child(1),
+.holdings-table tbody td:nth-child(2) { vertical-align: middle; }
 
 /* thead를 sticky로 고정 */
 .holdings-table thead th {
@@ -589,6 +597,15 @@ select.inp {
   font-family: 'Pretendard', sans-serif;
   letter-spacing: -.02em;
 }
+
+.holding-change {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.holding-change--muted { color: var(--text-muted); }
 
 @media (max-width: 860px) {
   .holdings-row {

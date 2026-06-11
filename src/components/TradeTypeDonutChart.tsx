@@ -48,7 +48,7 @@ interface Props {
   entries: Entry[];
   market: Market;
   isDark: boolean;
-  prices?: Record<string, number | null>;
+  prices?: Record<string, { price: number; changeRate: number } | null>;
   pricesFetched?: boolean;
 }
 
@@ -69,10 +69,12 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
     const base = calcHoldings(entries);
     if (!pricesFetched) return base;
     // 현재가가 조회된 경우 현재가 × 수량으로 재계산
-    return base.map((h) => {
-      const cp = prices[h.stock];
-      return cp != null ? { ...h, value: cp * h.qty } : h;
-    });
+    return base
+      .map((h) => {
+        const cp = prices[h.stock];
+        return cp != null ? { ...h, value: cp.price * h.qty } : h;
+      })
+      .sort((a, b) => b.value - a.value);
   }, [entries, prices, pricesFetched]);
 
   const calloutPlugin = useMemo(() => ({
@@ -87,15 +89,22 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
       const chartWidth: number = chart.width;
 
       ctx.save();
+
+      type LabelItem = {
+        x1: number; y1: number; midX: number; x3: number;
+        y: number; isRight: boolean; color: string; text: string; maxWidth: number;
+      };
+
+      // 1단계: 모든 레이블 정보 수집
+      const items: LabelItem[] = [];
       meta.data.forEach((arc: any, i: number) => {
         if (!data[i] || data[i] <= 0) return;
-
         const { x, y, startAngle, endAngle, outerRadius } = arc.getProps(
           ['x', 'y', 'startAngle', 'endAngle', 'outerRadius'],
           true,
         );
         const span = endAngle - startAngle;
-        if (span < 0.12) return;
+        if (span < 0.15) return;
 
         const mid = startAngle + span / 2;
         const cos = Math.cos(mid);
@@ -104,34 +113,51 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
 
         const x1 = x + cos * (outerRadius + 4);
         const y1 = y + sin * (outerRadius + 4);
-        const x2 = x + cos * (outerRadius + 18);
-        const y2 = y + sin * (outerRadius + 18);
-        const x3 = x2 + (isRight ? 14 : -14);
-        const y3 = y2;
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.strokeStyle = colors[i];
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        const midX = x + cos * (outerRadius + 18);
+        const idealY = y + sin * (outerRadius + 18);
+        const x3 = midX + (isRight ? 14 : -14);
+        const textX = x3 + (isRight ? 4 : -4);
+        const maxWidth = isRight ? chartWidth - textX - 2 : textX - 2;
 
         const pct = ((data[i] / total) * 100).toFixed(1);
         const rawLabel = labels[i] as string;
         const label = rawLabel.length > 8 ? rawLabel.slice(0, 7) + '…' : rawLabel;
-        const text = `${label}  ${pct}%`;
+
+        items.push({ x1, y1, midX, x3, y: idealY, isRight, color: colors[i], text: `${label}  ${pct}%`, maxWidth });
+      });
+
+      // 2단계: 좌·우 각각 Y 겹침 해소 (위→아래 패스 후 아래→위 패스)
+      const MIN_GAP = 13;
+      for (const side of [true, false]) {
+        const group = items.filter(l => l.isRight === side).sort((a, b) => a.y - b.y);
+        for (let i = 1; i < group.length; i++) {
+          if (group[i].y < group[i - 1].y + MIN_GAP)
+            group[i].y = group[i - 1].y + MIN_GAP;
+        }
+        for (let i = group.length - 2; i >= 0; i--) {
+          if (group[i].y > group[i + 1].y - MIN_GAP)
+            group[i].y = group[i + 1].y - MIN_GAP;
+        }
+      }
+
+      // 3단계: 렌더링
+      items.forEach(({ x1, y1, midX, x3, y, isRight, color, text, maxWidth }) => {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(midX, y);
+        ctx.lineTo(x3, y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
 
         ctx.font = '600 10px Pretendard, sans-serif';
         ctx.fillStyle = isDark ? '#E2E8F0' : '#374151';
         ctx.textAlign = isRight ? 'left' : 'right';
         ctx.textBaseline = 'middle';
-
         const textX = x3 + (isRight ? 4 : -4);
-        // canvas 경계를 넘지 않도록 maxWidth 적용
-        const maxWidth = isRight ? chartWidth - textX - 2 : textX - 2;
-        ctx.fillText(text, textX, y3, Math.max(maxWidth, 10));
+        ctx.fillText(text, textX, y, Math.max(maxWidth, 10));
       });
+
       ctx.restore();
     },
   }), [isDark]);

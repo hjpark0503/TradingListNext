@@ -60,7 +60,7 @@ export default function Dashboard() {
   const [showPLDetail, setShowPLDetail] = useState(false);
 
   // 보유 종목 현재가 (HoldingsList ↔ TradeTypeDonutChart 공유)
-  const [holdingPrices, setHoldingPrices] = useState<Record<string, number | null>>({});
+  const [holdingPrices, setHoldingPrices] = useState<Record<string, { price: number; changeRate: number } | null>>({});
   const [pricesFetched, setPricesFetched] = useState(false);
   const [pricesLoading, setPricesLoading] = useState(false);
   const pricesLoadingRef = useRef(false);
@@ -77,7 +77,7 @@ export default function Dashboard() {
     if (pricesLoadingRef.current || holdings.length === 0) return;
     pricesLoadingRef.current = true;
     setPricesLoading(true);
-    const results: Record<string, number | null> = {};
+    const results: Record<string, { price: number; changeRate: number } | null> = {};
     await Promise.all(
       holdings.map(async (h) => {
         try {
@@ -93,7 +93,9 @@ export default function Dashboard() {
           );
           if (priceRes.ok) {
             const data = await priceRes.json();
-            results[h.stock] = typeof data.price === 'number' ? data.price : null;
+            results[h.stock] = typeof data.price === 'number'
+              ? { price: data.price, changeRate: typeof data.changeRate === 'number' ? data.changeRate : 0 }
+              : null;
           } else {
             results[h.stock] = null;
           }

@@ -37,14 +37,22 @@ function calcHoldings(entries: Entry[]): Holding[] {
 interface Props {
   entries: Entry[];
   market: Market;
-  prices: Record<string, number | null>;
+  prices: Record<string, { price: number; changeRate: number } | null>;
   fetched: boolean;
   loading: boolean;
   onFetch: (holdings: { stock: string }[]) => void;
 }
 
 export function HoldingsList({ entries, market, prices, fetched, loading, onFetch }: Props) {
-  const holdings = useMemo(() => calcHoldings(entries), [entries]);
+  const holdings = useMemo(() => {
+    const base = calcHoldings(entries);
+    if (!fetched) return base;
+    return [...base].sort((a, b) => {
+      const aVal = (prices[a.stock]?.price ?? a.avgPrice) * a.qty;
+      const bVal = (prices[b.stock]?.price ?? b.avgPrice) * b.qty;
+      return bVal - aVal;
+    });
+  }, [entries, fetched, prices]);
 
   // 마켓 전환·초기 로드 시 자동 현재가 조회
   const autoFetchedMarket = useRef<string | null>(null);
@@ -88,38 +96,49 @@ export function HoldingsList({ entries, market, prices, fetched, loading, onFetc
             <tr>
               <th>No</th>
               <th>종목명</th>
+              <th className="r">평균단가</th>
               <th className="r">현재가</th>
               <th className="r">평가손익</th>
-              <th className="r">손익률</th>
             </tr>
           </thead>
           <tbody>
             {holdings.map((h, i) => {
-              const cp = prices[h.stock];
-              const hasCp = fetched && cp != null;
+              const cpData = prices[h.stock];
+              const hasCp = fetched && cpData != null;
+              const cp = cpData?.price ?? null;
+              const changeRate = cpData?.changeRate ?? null;
               // 평가손익 = (현재가 - 매입단가) × 보유수량
-              const unrealizedPL = hasCp ? (cp - h.avgPrice) * h.qty : null;
+              const unrealizedPL = hasCp ? (cp! - h.avgPrice) * h.qty : null;
               // 손익률(%) = 평가손익 ÷ 매입금액 × 100
               const costBasis = h.avgPrice * h.qty;
               const returnRate = hasCp && costBasis > 0
                 ? (unrealizedPL! / costBasis) * 100
                 : null;
-              const plClass = unrealizedPL == null
+              const plClass = unrealizedPL == null || unrealizedPL === 0
                 ? ''
-                : unrealizedPL >= 0 ? 'pl-pos' : 'pl-neg';
+                : unrealizedPL > 0 ? 'pl-pos' : 'pl-neg';
 
               return (
                 <tr key={h.stock}>
                   <td className="holdings-no">{i + 1}</td>
                   <td className="holdings-stock">{h.stock}</td>
                   <td className="r">
-                    {hasCp ? fmt(cp) : '—'}
+                    {fmt(h.avgPrice)}
+                    <span className="holding-change holding-change--muted">
+                      {h.qty.toLocaleString('en-US')}주
+                    </span>
+                  </td>
+                  <td className="r">
+                    {hasCp ? fmt(cp!) : '—'}
+                    <span className={`holding-change ${hasCp && changeRate != null ? (changeRate > 0 ? 'pl-pos' : changeRate < 0 ? 'pl-neg' : '') : ''}`}>
+                      {hasCp && changeRate != null ? `${changeRate > 0 ? '+' : ''}${changeRate.toFixed(2)}%` : ' '}
+                    </span>
                   </td>
                   <td className={`r ${plClass}`}>
-                    {unrealizedPL == null ? '—' : `${unrealizedPL >= 0 ? '+' : ''}${fmtPL(unrealizedPL)}`}
-                  </td>
-                  <td className={`r ${plClass}`}>
-                    {returnRate == null ? '—' : `${returnRate >= 0 ? '+' : ''}${returnRate.toFixed(2)}%`}
+                    {unrealizedPL == null ? '—' : `${unrealizedPL > 0 ? '+' : ''}${fmtPL(unrealizedPL)}`}
+                    <span className={`holding-change ${plClass}`}>
+                      {returnRate != null ? `${returnRate > 0 ? '+' : ''}${returnRate.toFixed(2)}%` : ' '}
+                    </span>
                   </td>
                 </tr>
               );

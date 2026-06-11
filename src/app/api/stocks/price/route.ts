@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 interface PriceResult {
   price: number;
   currency: 'KRW' | 'USD';
+  change: number;
+  changeRate: number; // %, e.g. 1.84 means +1.84%
 }
 
 const DAUM_HEADERS = {
@@ -16,7 +18,7 @@ async function fetchDomesticPrice(code: string): Promise<PriceResult | null> {
   // Daum Finance symbolCode = 'A' + 6자리 코드
   const symbolCode = 'A' + code.padStart(6, '0');
   const res = await fetch(
-    `https://finance.daum.net/api/quotes/${symbolCode}?fields=tradePrice`,
+    `https://finance.daum.net/api/quotes/${symbolCode}?fields=tradePrice,changePrice,changeRate`,
     { headers: DAUM_HEADERS }
   );
   if (!res.ok) return null;
@@ -25,7 +27,12 @@ async function fetchDomesticPrice(code: string): Promise<PriceResult | null> {
   const price = data?.tradePrice;
   if (typeof price !== 'number') return null;
 
-  return { price, currency: 'KRW' };
+  return {
+    price,
+    currency: 'KRW',
+    change: typeof data.changePrice === 'number' ? data.changePrice : 0,
+    changeRate: typeof data.changeRate === 'number' ? data.changeRate * 100 : 0,
+  };
 }
 
 async function fetchOverseasPrice(symbol: string): Promise<PriceResult | null> {
@@ -50,7 +57,22 @@ async function fetchOverseasPrice(symbol: string): Promise<PriceResult | null> {
   const price = parseFloat(raw.replace(/[^0-9.]/g, ''));
   if (isNaN(price)) return null;
 
-  return { price, currency: 'USD' };
+  const rawChange = data?.data?.primaryData?.netChange as string | undefined;
+  const rawChangeRate = data?.data?.primaryData?.percentageChange as string | undefined;
+
+  // "+5.25" / "-5.25" → number; strip everything except digits, dot, minus
+  const parseSignedNum = (s?: string) => {
+    if (!s) return 0;
+    const n = parseFloat(s.replace(/[^0-9.-]/g, ''));
+    return isNaN(n) ? 0 : n;
+  };
+
+  return {
+    price,
+    currency: 'USD',
+    change: parseSignedNum(rawChange),
+    changeRate: parseSignedNum(rawChangeRate),
+  };
 }
 
 // GET /api/stocks/price?code=005930&market=domestic
