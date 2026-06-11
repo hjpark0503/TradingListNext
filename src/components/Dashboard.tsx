@@ -32,12 +32,12 @@ const TABS = [
 ];
 
 const EMPTY_MSGS: Record<string, string> = {
-  all: '아직 내역이 없습니다.',
-  buy: '아직 매수 내역이 없습니다.',
-  sell: '아직 매도 내역이 없습니다.',
-  deposit: '아직 입금 내역이 없습니다.',
-  withdraw: '아직 출금 내역이 없습니다.',
-  div: '아직 배당금 내역이 없습니다.',
+  all: '내역이 없습니다.',
+  buy: '매수 내역이 없습니다.',
+  sell: '매도 내역이 없습니다.',
+  deposit: '입금 내역이 없습니다.',
+  withdraw: '출금 내역이 없습니다.',
+  div: '배당금 내역이 없습니다.',
 };
 
 function valueSize(val: string): string | undefined {

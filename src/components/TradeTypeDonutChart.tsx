@@ -192,15 +192,14 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
       legend: { display: false },
       tooltip: {
         callbacks: {
+          title: (items: any[]) => items[0]?.label ?? '',
           label: (ctx: any) => {
             const val = ctx.parsed as number;
             const formatted = market === 'domestic'
               ? `₩${Math.round(val).toLocaleString('ko-KR')}`
               : `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             const pct = grandTotal > 0 ? ((val / grandTotal) * 100).toFixed(1) : '0.0';
-            const qty = (ctx.dataset.qtys as number[])?.[ctx.dataIndex as number];
-            const qtyStr = qty != null ? `  |  ${qty}주 보유` : '';
-            return ` ${ctx.label}: ${formatted} (${pct}%)${qtyStr}`;
+            return ` ${formatted}  (${pct}%)`;
           },
         },
       },
