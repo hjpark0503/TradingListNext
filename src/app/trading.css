@@ -193,7 +193,7 @@ body {
   grid-template-columns: 1fr;
 }
 .main-layout--form-hidden .dashboard-area {
-  max-width: calc(100% - var(--aside-w) - 24px);
+  width: calc(100% - var(--aside-w) - 24px);
   margin: 0 auto;
 }
 
