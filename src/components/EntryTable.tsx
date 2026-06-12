@@ -59,9 +59,13 @@ interface EntryTableProps {
   emptyMsg: string;
   onDelete: (id: number) => void;
   onUpdate: (entry: Entry) => void;
+  isSelectMode: boolean;
+  selectedIds: Set<number>;
+  onToggleSelect: (id: number) => void;
+  onToggleSelectAll: (ids: number[]) => void;
 }
 
-export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: EntryTableProps) {
+export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate, isSelectMode, selectedIds, onToggleSelect, onToggleSelectAll }: EntryTableProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft]         = useState<DraftState | null>(null);
 
@@ -91,6 +95,17 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
     : [];
 
   const realizedPL = panel === 'all' ? calcRealizedPL(list) : null;
+
+  const allSelected  = list.length > 0 && list.every((e) => selectedIds.has(e.id));
+  const someInPanel  = list.some((e) => selectedIds.has(e.id));
+
+  function handleSelectAll() {
+    if (allSelected) {
+      onToggleSelectAll([]);
+    } else {
+      onToggleSelectAll(list.map((e) => e.id));
+    }
+  }
 
   // Modal derived state
   const d       = draft;
@@ -318,50 +333,66 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate }: Ent
         <div className="panel-empty">{emptyMsg}</div>
       ) : (
         <div className="table-wrap">
-          <table className="trade-table">
-            <thead>
-              <tr>
-                <th>거래일</th>
-                <th>종목명</th>
-                <th>거래유형</th>
-                <th className="r">단가</th>
-                <th className="r">수량</th>
-                <th className="r">거래금액</th>
-                <th className="r">수수료</th>
-                <th className="r">세금</th>
-                <th className="r">정산금액</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((e) => (
-                <tr key={e.id} className="entry-row entry-row--clickable" onClick={() => openEdit(e)}>
-                  <td className="col-text date-cell">{e.date}</td>
-                  <td className="col-text stock-cell">{e.stock || '—'}</td>
-                  <td className="col-text">
-                    <span className={`badge ${TYPE_CLASS[e.type]}`}>{TYPE_LABEL[e.type]}</span>
-                  </td>
-                  <td className="r">{e.price ? fmtNum(e.price, e.market) : '—'}</td>
-                  <td className="r">{e.qty ? e.qty.toLocaleString() : '—'}</td>
-                  <td className="r">{fmtNum(e.amount, e.market)}</td>
-                  <td className="r fee-cell">{fmtNum(e.fee, e.market)}</td>
-                  <td className="r tax-cell">{fmtNum(e.tax, e.market)}</td>
-                  <td className="r settle-cell">{fmtNum(e.settlement, e.market)}</td>
-                </tr>
-              ))}
-            </tbody>
-            {panel !== 'all' && (
-              <tfoot>
+            <table className="trade-table">
+              <thead>
                 <tr>
-                  <td colSpan={5}>합계 ({list.length}건)</td>
-                  <td className="r">{fmtNum(sumAmount, mkt)}</td>
-                  <td className="r">{fmtNum(sumFee, mkt)}</td>
-                  <td className="r">{fmtNum(sumTax, mkt)}</td>
-                  <td className="r">{fmtNum(sumSettlement, mkt)}</td>
+                  <th>거래일</th>
+                  <th>종목명</th>
+                  <th>거래유형</th>
+                  <th className="r">단가</th>
+                  <th className="r">수량</th>
+                  <th className="r">거래금액</th>
+                  <th className="r">수수료</th>
+                  <th className="r">세금</th>
+                  <th className="r">정산금액</th>
+                  {isSelectMode && (
+                    <th className="col-check">
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        ref={(el) => { if (el) el.indeterminate = someInPanel && !allSelected; }}
+                        onChange={handleSelectAll}
+                      />
+                    </th>
+                  )}
                 </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {list.map((e) => (
+                  <tr key={e.id} className={`entry-row entry-row--clickable${selectedIds.has(e.id) ? ' entry-row--selected' : ''}`} onClick={() => openEdit(e)}>
+                    <td className="col-text date-cell">{e.date}</td>
+                    <td className="col-text stock-cell">{e.stock || '—'}</td>
+                    <td className="col-text">
+                      <span className={`badge ${TYPE_CLASS[e.type]}`}>{TYPE_LABEL[e.type]}</span>
+                    </td>
+                    <td className="r">{e.price ? fmtNum(e.price, e.market) : '—'}</td>
+                    <td className="r">{e.qty ? e.qty.toLocaleString() : '—'}</td>
+                    <td className="r">{fmtNum(e.amount, e.market)}</td>
+                    <td className="r fee-cell">{fmtNum(e.fee, e.market)}</td>
+                    <td className="r tax-cell">{fmtNum(e.tax, e.market)}</td>
+                    <td className="r settle-cell">{fmtNum(e.settlement, e.market)}</td>
+                    {isSelectMode && (
+                      <td className="col-check" onClick={(ev) => ev.stopPropagation()}>
+                        <input type="checkbox" checked={selectedIds.has(e.id)} onChange={() => onToggleSelect(e.id)} />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+              {panel !== 'all' && (
+                <tfoot>
+                  <tr>
+                    <td colSpan={5}>합계 ({list.length}건)</td>
+                    <td className="r">{fmtNum(sumAmount, mkt)}</td>
+                    <td className="r">{fmtNum(sumFee, mkt)}</td>
+                    <td className="r">{fmtNum(sumTax, mkt)}</td>
+                    <td className="r">{fmtNum(sumSettlement, mkt)}</td>
+                    {isSelectMode && <td />}
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
       )}
 
       {typeSums.length > 0 && (

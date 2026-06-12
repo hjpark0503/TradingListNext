@@ -954,6 +954,46 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
    14. EDIT MODAL
    ══════════════════════════════════════════════════════════════════ */
 .entry-row--clickable { cursor: pointer; }
+.entry-row--selected td { background: rgba(59,130,246,.07); }
+
+/* 체크박스 컬럼 (오른쪽) */
+.trade-table th.col-check,
+.trade-table td.col-check {
+  width: 48px;
+  padding-left: 0;
+  padding-right: 20px;
+  text-align: center;
+  vertical-align: middle;
+}
+.trade-table td.col-check input[type="checkbox"],
+.trade-table th.col-check input[type="checkbox"] {
+  display: block;
+  margin: 0 auto;
+  width: 15px; height: 15px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  vertical-align: middle;
+}
+
+/* 쓰레기통 버튼 (탭바 우측) */
+.tab-bar__trash { margin-left: auto; }
+.trash-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: none; cursor: pointer;
+  padding: 5px 8px; border-radius: 6px;
+  color: #dc2626;
+  opacity: .7;
+  transition: opacity .15s;
+}
+.trash-btn:hover,
+.trash-btn:focus-visible { opacity: 1; outline: none; }
+.trash-btn--delete { font-weight: 600; opacity: 1; }
+.trash-btn__badge {
+  font-size: .75rem; font-weight: 700;
+  background: #dc2626; color: #fff;
+  border-radius: 99px; padding: 0 5px; min-width: 16px;
+  text-align: center; line-height: 16px;
+}
 
 .modal-overlay {
   position: fixed; inset: 0; z-index: 500;
@@ -1112,6 +1152,8 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 [data-theme="dark"] ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+[data-theme="dark"] .entry-row--selected td { background: rgba(59,130,246,.12); }
+[data-theme="dark"] .trash-btn--delete { color: #f87171; }
 
 /* 다크모드 토글 버튼 */
 .btn-dark-toggle {
@@ -1123,3 +1165,83 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   flex-shrink: 0;
 }
 .btn-dark-toggle:hover { background: var(--border); color: var(--text-primary); }
+
+/* ══════════════════════════════════════════════════════════════════
+   삭제 확인 다이얼로그
+   ══════════════════════════════════════════════════════════════════ */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeUp .16s ease;
+}
+
+.confirm-dialog {
+  background: var(--bg-surface);
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%; max-width: 340px;
+  padding: 32px 28px 24px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  animation: confirmPop .2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes confirmPop {
+  from { transform: scale(.88); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.confirm-icon-wrap {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--loss-soft);
+  color: var(--loss);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+
+.confirm-title {
+  margin: 0 0 10px;
+  font-size: 1.0625rem; font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -.01em;
+}
+
+.confirm-desc {
+  margin: 0 0 28px;
+  font-size: .875rem; color: var(--text-secondary);
+  line-height: 1.65;
+}
+.confirm-desc strong { color: var(--text-primary); font-weight: 600; }
+
+.confirm-actions {
+  display: flex; gap: 10px; width: 100%;
+}
+
+.confirm-btn-cancel {
+  flex: 1;
+  padding: 12px 0; border-radius: 12px;
+  background: var(--bg-input); border: none; cursor: pointer;
+  font-size: .9375rem; font-weight: 600;
+  color: var(--text-secondary);
+  transition: background .15s, color .15s;
+}
+.confirm-btn-cancel:hover { background: var(--border); color: var(--text-primary); }
+
+.confirm-btn-delete {
+  flex: 1;
+  padding: 12px 0; border-radius: 12px;
+  background: var(--loss); border: none; cursor: pointer;
+  font-size: .9375rem; font-weight: 700;
+  color: #fff;
+  transition: filter .15s;
+}
+.confirm-btn-delete:hover { filter: brightness(1.1); }
+
+[data-theme="dark"] .confirm-dialog {
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] .confirm-btn-cancel:hover { background: rgba(255,255,255,.06); }

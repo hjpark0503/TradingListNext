@@ -63,6 +63,11 @@ export function useDashboard() {
     setState((prev) => ({ ...prev, entries: prev.entries.filter((e) => e.id !== id) }));
   }, []);
 
+  const deleteEntries = useCallback((ids: number[]) => {
+    const idSet = new Set(ids);
+    setState((prev) => ({ ...prev, entries: prev.entries.filter((e) => !idSet.has(e.id)) }));
+  }, []);
+
   const updateEntry = useCallback((entry: Entry) => {
     setState((prev) => ({
       ...prev,
@@ -81,6 +86,7 @@ export function useDashboard() {
     switchMarket,
     addEntry,
     deleteEntry,
+    deleteEntries,
     updateEntry,
     loadEntries,
   };

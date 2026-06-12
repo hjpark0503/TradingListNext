@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
@@ -49,12 +50,58 @@ function valueSize(val: string): string | undefined {
 }
 
 export default function Dashboard() {
-  const { state, setExchangeRate, switchTab, switchMarket, addEntry, deleteEntry, updateEntry, loadEntries } = useDashboard();
+  const { state, setExchangeRate, switchTab, switchMarket, addEntry, deleteEntry, deleteEntries, updateEntry, loadEntries } = useDashboard();
   const { isDark, toggle: toggleDark } = useDarkMode();
 
   const { exchangeRate, activeTab, currentMarket, entries } = state;
 
   const marketEntries = entries.filter((e) => e.market === currentMarket);
+
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  function handleTrashClick() {
+    if (!isSelectMode) {
+      setIsSelectMode(true);
+      setSelectedIds(new Set());
+      return;
+    }
+    if (selectedIds.size > 0) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+    setIsSelectMode(false);
+  }
+
+  function handleDeleteConfirm() {
+    deleteEntries([...selectedIds]);
+    setSelectedIds(new Set());
+    setIsSelectMode(false);
+    setShowDeleteConfirm(false);
+  }
+
+  function handleDeleteCancel() {
+    setShowDeleteConfirm(false);
+  }
+
+  function handleToggleSelect(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function handleToggleSelectAll(ids: number[]) {
+    setSelectedIds(new Set(ids));
+  }
+
+  function handleMarketChange(m: Market) {
+    switchMarket(m);
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  }
 
   const realizedPL = calcRealizedPL(marketEntries);
   const [showPLDetail, setShowPLDetail] = useState(false);
@@ -150,14 +197,39 @@ export default function Dashboard() {
     }
   };
 
+  const deleteConfirmModal = showDeleteConfirm ? createPortal(
+    <div className="confirm-overlay" onClick={handleDeleteCancel}>
+      <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="confirm-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </div>
+        <p className="confirm-title">정말 삭제하시겠습니까?</p>
+        <p className="confirm-desc">
+          선택한 <strong>{selectedIds.size}건</strong>의 거래내역이 삭제됩니다.<br />이 작업은 되돌릴 수 없습니다.
+        </p>
+        <div className="confirm-actions">
+          <button className="confirm-btn-cancel" onClick={handleDeleteCancel}>취소</button>
+          <button className="confirm-btn-delete" onClick={handleDeleteConfirm}>삭제</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
     <div>
+      {deleteConfirmModal}
       <Header
         onExport={handleExport}
         onImport={handleImport}
         hasEntries={entries.length > 0}
         currentMarket={currentMarket}
-        onMarketChange={(m) => switchMarket(m as Market)}
+        onMarketChange={(m) => handleMarketChange(m as Market)}
         isDark={isDark}
         onToggleDark={toggleDark}
       />
@@ -179,7 +251,7 @@ export default function Dashboard() {
         {showTradeForm && (
           <TradeForm
             market={currentMarket}
-            onMarketChange={(m) => switchMarket(m as Market)}
+            onMarketChange={(m) => handleMarketChange(m as Market)}
             onAdd={addEntry}
           />
         )}
@@ -325,6 +397,23 @@ export default function Dashboard() {
                   {tab.label}
                 </button>
               ))}
+              {marketEntries.length > 0 && (
+                <button
+                  className={`trash-btn tab-bar__trash${isSelectMode ? (selectedIds.size > 0 ? ' trash-btn--delete' : ' trash-btn--active') : ''}`}
+                  onClick={handleTrashClick}
+                  title={isSelectMode ? (selectedIds.size > 0 ? `${selectedIds.size}건 삭제` : '선택 취소') : '항목 선택 삭제'}
+                >
+                  {isSelectMode && selectedIds.size > 0 && (
+                    <span className="trash-btn__badge">{selectedIds.size}</span>
+                  )}
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+              )}
             </div>
 
             {TABS.map((tab) => (
@@ -339,6 +428,10 @@ export default function Dashboard() {
                   emptyMsg={EMPTY_MSGS[tab.id]}
                   onDelete={deleteEntry}
                   onUpdate={updateEntry}
+                  isSelectMode={isSelectMode}
+                  selectedIds={selectedIds}
+                  onToggleSelect={handleToggleSelect}
+                  onToggleSelectAll={handleToggleSelectAll}
                 />
               </div>
             ))}
