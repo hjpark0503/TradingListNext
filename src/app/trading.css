@@ -314,9 +314,10 @@ select.inp {
 }
 
 /* 거래유형 선택 */
-.type-ctrl { display:flex; flex-wrap:wrap; gap:6px; }
+.type-ctrl { display:flex; flex-direction:column; gap:6px; }
+.type-ctrl-row { display:flex; gap:6px; }
 .type-btn {
-  flex:1 1 calc(33.333% - 6px); min-width:0; height:40px;
+  flex:1 1 0; min-width:0; height:40px;
   border:none; border-radius:var(--r-sm);
   background:var(--bg-input); cursor:pointer;
   font-family:'Pretendard',sans-serif; font-size:.80rem; font-weight:600;
@@ -1095,8 +1096,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .header-actions { gap:4px; }
   .btn-text { display:none; }
   .btn-secondary { padding:0 10px; min-height:36px; }
-  /* 거래유형 버튼 2열 */
-  .type-btn { flex:1 1 calc(50% - 6px); font-size:.80rem; }
+  .type-btn { font-size:.80rem; }
   /* 카드 */
   .cards  { gap:8px; }
   .card   { padding:16px 14px; border-radius:var(--r-lg); }

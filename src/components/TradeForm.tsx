@@ -142,8 +142,10 @@ export function TradeForm({ market, onMarketChange, onAdd }: TradeFormProps) {
     setType('buy');
   }
 
-  const TYPE_BTNS: { id: TradeType; label: string }[] = [
+  const TYPE_BTNS_ROW1: { id: TradeType; label: string }[] = [
     { id: 'buy', label: '매수' }, { id: 'sell', label: '매도' },
+  ];
+  const TYPE_BTNS_ROW2: { id: TradeType; label: string }[] = [
     { id: 'deposit', label: '입금' }, { id: 'withdraw', label: '출금' },
     { id: 'div', label: '배당금' },
   ];
@@ -172,17 +174,32 @@ export function TradeForm({ market, onMarketChange, onAdd }: TradeFormProps) {
           <div className="field">
             <label className="field-label">거래유형</label>
             <div className="type-ctrl">
-              {TYPE_BTNS.map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  className={`type-btn${type === b.id ? ' active' : ''}`}
-                  data-type={b.id}
-                  onClick={() => handleTypeChange(b.id)}
-                >
-                  {b.label}
-                </button>
-              ))}
+              <div className="type-ctrl-row">
+                {TYPE_BTNS_ROW1.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    className={`type-btn${type === b.id ? ' active' : ''}`}
+                    data-type={b.id}
+                    onClick={() => handleTypeChange(b.id)}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+              <div className="type-ctrl-row">
+                {TYPE_BTNS_ROW2.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    className={`type-btn${type === b.id ? ' active' : ''}`}
+                    data-type={b.id}
+                    onClick={() => handleTypeChange(b.id)}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
