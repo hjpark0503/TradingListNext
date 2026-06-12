@@ -64,6 +64,7 @@ export default function Dashboard() {
   const [pricesFetched, setPricesFetched] = useState(false);
   const [pricesLoading, setPricesLoading] = useState(false);
   const pricesLoadingRef = useRef(false);
+  const tradeListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setHoldingPrices({});
@@ -264,7 +265,10 @@ export default function Dashboard() {
                 key={card.id}
                 className={`card${activeTab === card.id ? ' active' : ''}`}
                 data-tab={card.id}
-                onClick={() => switchTab(card.id)}
+                onClick={() => {
+                  switchTab(card.id);
+                  tradeListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="label">{card.label}</div>
@@ -294,7 +298,7 @@ export default function Dashboard() {
           </div>
 
           {/* 탭 거래내역 */}
-          <div className="section">
+          <div className="section" ref={tradeListRef}>
             <div className="tab-bar">
               {TABS.map((tab) => (
                 <button

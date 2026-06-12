@@ -424,7 +424,7 @@ select.inp {
   transition:box-shadow .15s;
 }
 .card:hover  { box-shadow:var(--shadow-md); }
-.card.active { background:var(--brand-soft); box-shadow:var(--shadow-sm); }
+.card.active { box-shadow:var(--shadow-sm); }
 .card-stat   { cursor:default; }
 .card-stat:hover { box-shadow:var(--shadow-sm); }
 
