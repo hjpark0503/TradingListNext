@@ -111,6 +111,8 @@ export default function Dashboard() {
     setPricesLoading(false);
   }, [currentMarket]);
 
+  const [showTradeForm, setShowTradeForm] = useState(false);
+
   const hasPLData = realizedPL.rows.length > 0;
 
   function plCardValue() {
@@ -160,14 +162,27 @@ export default function Dashboard() {
         onToggleDark={toggleDark}
       />
 
-      <div className="main-layout">
+      <button
+        className={`trade-form-fab${showTradeForm ? ' trade-form-fab--open' : ''}`}
+        onClick={() => setShowTradeForm((v) => !v)}
+        title={showTradeForm ? '직접 입력 닫기' : '거래 직접 입력'}
+      >
+        {showTradeForm
+          ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        }
+      </button>
+
+      <div className={`main-layout${showTradeForm ? '' : ' main-layout--form-hidden'}`}>
 
         {/* ── 좌: 거래 직접 입력 폼 ── */}
-        <TradeForm
-          market={currentMarket}
-          onMarketChange={(m) => switchMarket(m as Market)}
-          onAdd={addEntry}
-        />
+        {showTradeForm && (
+          <TradeForm
+            market={currentMarket}
+            onMarketChange={(m) => switchMarket(m as Market)}
+            onAdd={addEntry}
+          />
+        )}
 
         {/* ── 우: 대시보드 ── */}
         <div className="dashboard-area">

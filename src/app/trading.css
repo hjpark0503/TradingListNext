@@ -188,6 +188,43 @@ body {
   align-items: start;
 }
 
+/* 폼 닫힌 상태: 1컬럼, dashboard-area는 동일 너비로 중앙 정렬 */
+.main-layout--form-hidden {
+  grid-template-columns: 1fr;
+}
+.main-layout--form-hidden .dashboard-area {
+  max-width: calc(100% - var(--aside-w) - 24px);
+  margin: 0 auto;
+}
+
+/* FAB */
+.trade-form-fab {
+  position: fixed;
+  bottom: 32px;
+  left: 32px;
+  z-index: 190;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: #1e1e1e;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15), 0 1px 4px rgba(0,0,0,.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s, transform .2s, box-shadow .2s;
+}
+.trade-form-fab:hover {
+  background: #f0f0f0;
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,.2);
+}
+.trade-form-fab--open { background: #f0f0f0; }
+[data-theme="dark"] .trade-form-fab { background: #2e3244; color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.12); }
+[data-theme="dark"] .trade-form-fab:hover { background: #3a3f56; }
+
 /* ══════════════════════════════════════════════════════════════════
    5. FORM ASIDE
    ══════════════════════════════════════════════════════════════════ */
@@ -994,9 +1031,9 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 
 @media (max-width:860px) {
   :root { --page-pad:16px; }
-  .main-layout { grid-template-columns:1fr; }
-  .form-aside   { position:static; order:2; }
-  .dashboard-area { order:1; }
+  .main-layout,
+  .main-layout--form-hidden { grid-template-columns:1fr; }
+  .main-layout--form-hidden .dashboard-area { max-width:100%; }
   .summary-grid-spacer { display:none; }
   .cards { grid-template-columns:repeat(2,1fr); gap:10px; }
   .summary-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
