@@ -1033,7 +1033,8 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   :root { --page-pad:16px; }
   .main-layout,
   .main-layout--form-hidden { grid-template-columns:1fr; }
-  .main-layout--form-hidden .dashboard-area { max-width:100%; }
+  .main-layout--form-hidden .dashboard-area { width:100%; }
+  .form-aside { position: static; }
   .summary-grid-spacer { display:none; }
   .cards { grid-template-columns:repeat(2,1fr); gap:10px; }
   .summary-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
