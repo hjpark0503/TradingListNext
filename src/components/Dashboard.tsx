@@ -103,6 +103,11 @@ export default function Dashboard() {
     setSelectedIds(new Set());
   }
 
+  if (isSelectMode && marketEntries.length === 0) {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
   const realizedPL = calcRealizedPL(marketEntries);
   const [showPLDetail, setShowPLDetail] = useState(false);
 
@@ -192,6 +197,9 @@ export default function Dashboard() {
     try {
       const imported = await importEntriesFromExcel(file);
       loadEntries(imported);
+      setIsSelectMode(false);
+      setSelectedIds(new Set());
+      setShowDeleteConfirm(false);
     } catch (e) {
       alert('엑셀 파일을 읽는 중 오류가 발생했습니다: ' + ((e as Error)?.message ?? String(e)));
     }
@@ -366,23 +374,25 @@ export default function Dashboard() {
           </div>
 
           {/* 보유 종목 비중 + 보유 종목 내역 */}
-          <div className="holdings-row">
-            <TradeTypeDonutChart
-              entries={marketEntries}
-              market={currentMarket}
-              isDark={isDark}
-              prices={holdingPrices}
-              pricesFetched={pricesFetched}
-            />
-            <HoldingsList
-              entries={marketEntries}
-              market={currentMarket}
-              prices={holdingPrices}
-              fetched={pricesFetched}
-              loading={pricesLoading}
-              onFetch={fetchHoldingPrices}
-            />
-          </div>
+          {marketEntries.length > 0 && (
+            <div className="holdings-row">
+              <TradeTypeDonutChart
+                entries={marketEntries}
+                market={currentMarket}
+                isDark={isDark}
+                prices={holdingPrices}
+                pricesFetched={pricesFetched}
+              />
+              <HoldingsList
+                entries={marketEntries}
+                market={currentMarket}
+                prices={holdingPrices}
+                fetched={pricesFetched}
+                loading={pricesLoading}
+                onFetch={fetchHoldingPrices}
+              />
+            </div>
+          )}
 
           {/* 탭 거래내역 */}
           <div className="section" ref={tradeListRef}>
