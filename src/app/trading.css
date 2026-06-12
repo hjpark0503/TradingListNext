@@ -125,14 +125,15 @@ body {
    ══════════════════════════════════════════════════════════════════ */
 .header {
   position: sticky; top:0; z-index:200;
-  display: flex; align-items: center; justify-content: space-between; gap:16px;
+  display: flex; align-items: center;
   padding: 0 var(--page-pad);
   height: var(--header-h);
   background: #FFFFFF;
   border-bottom: 1px solid var(--border);
 }
-.header-left  { min-width:0; display:flex; align-items:center; gap:8px; }
-.header-right { display:flex; align-items:center; gap:12px; }
+.header-left  { flex:1; min-width:0; display:flex; align-items:center; gap:8px; }
+.header-center { display:flex; align-items:center; gap:8px; }
+.header-right { flex:1; display:flex; align-items:center; justify-content:flex-end; gap:12px; }
 .header-actions { display:flex; align-items:center; gap:8px; }
 
 .header h1 {
@@ -152,9 +153,8 @@ body {
 }
 
 /* 헤더 마켓 토글 */
-.header-market { width:168px; }
-.header-market .seg-ctrl { height:38px; }
-.header-market .seg-btn  { font-size:.82rem; }
+.header-market .seg-ctrl { height:38px; min-width:200px; }
+.header-market .seg-btn  { font-size:.82rem; padding:0 16px; }
 
 /* 버튼 공통 */
 .btn-primary, .btn-secondary, .btn-ghost {
@@ -1039,20 +1039,18 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .summary-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
   .card-pl { grid-column: span 2; }
   .card .value { font-size:1.3rem; }
-  .header-market { width:148px; }
 }
 
 @media (max-width:600px) {
   :root { --page-pad:12px; }
   /* 헤더: 마켓 토글 유지, 버튼 아이콘만 표시 */
-  .header { gap:8px; padding:0 var(--page-pad); }
-  .header h1 { font-size:.82rem; }
-  .header-market {
-    display:flex;
-    width:124px;
-  }
-  .header-market .seg-ctrl { height:34px; }
-  .header-market .seg-btn  { font-size:.70rem; padding:0 4px; }
+  .header { padding:0 var(--page-pad); }
+  .header h1 { font-size:.75rem; }
+  .app-version { display:none; }
+  .header-left { flex:0 0 auto; }
+  .header-center { flex:1; justify-content:center; }
+  .header-market .seg-ctrl { height:34px; min-width:0; }
+  .header-market .seg-btn  { font-size:.70rem; padding:0 10px; }
   .header-actions { gap:4px; }
   .btn-text { display:none; }
   .btn-secondary { padding:0 10px; min-height:36px; }

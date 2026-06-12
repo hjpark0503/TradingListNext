@@ -54,7 +54,7 @@ export function Header({ onExport, onImport, hasEntries, currentMarket, onMarket
         <h1>영차영차 주식 거래일지</h1>
         <span className="app-version">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
       </div>
-      <div className="header-right">
+      <div className="header-center">
         <div className="header-market">
           <div className="seg-ctrl">
             {(['domestic', 'overseas'] as Market[]).map((m) => (
@@ -69,6 +69,8 @@ export function Header({ onExport, onImport, hasEntries, currentMarket, onMarket
             ))}
           </div>
         </div>
+      </div>
+      <div className="header-right">
         <div className="header-actions">
           <button
             type="button"
