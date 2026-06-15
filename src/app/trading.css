@@ -716,7 +716,6 @@ tbody tr {
   animation:fadeUp .2s ease both;
 }
 tbody tr:last-child { border-bottom:none; }
-tbody tr:hover      { background:#F8FAFF; }
 
 tbody td {
   padding:14px 16px; color:var(--text-secondary);
@@ -955,7 +954,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
    14. EDIT MODAL
    ══════════════════════════════════════════════════════════════════ */
 .entry-row--clickable { cursor: pointer; }
-.entry-row--selected td { background: rgba(59,130,246,.07); }
+.entry-row--selected td { background: rgba(239,68,68,.08); }
 
 /* 체크박스 컬럼 (오른쪽) */
 .trade-table th.col-check,
@@ -1132,8 +1131,6 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   box-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
-[data-theme="dark"] tbody tr:hover { background: rgba(255,255,255,0.04); }
-
 [data-theme="dark"] .inp:focus {
   background: var(--bg-surface);
   box-shadow: 0 0 0 3px rgba(77,148,255,0.18);
@@ -1159,7 +1156,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 [data-theme="dark"] ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
-[data-theme="dark"] .entry-row--selected td { background: rgba(59,130,246,.12); }
+[data-theme="dark"] .entry-row--selected td { background: rgba(239,68,68,.14); }
 [data-theme="dark"] .trash-btn--delete { color: #f87171; }
 
 /* 다크모드 토글 버튼 */
@@ -1335,7 +1332,6 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   transition: background .12s;
   text-align: left;
 }
-.rpl-parent:hover { background: var(--bg-base); }
 .rpl-parent.open  { background: none; }
 
 .rpl-parent__left {
@@ -1504,7 +1500,6 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   white-space: nowrap;
 }
 
-[data-theme="dark"] .rpl-parent:hover { background: rgba(255,255,255,0.04); }
 [data-theme="dark"] .rpl-parent.open  { background: none; }
 [data-theme="dark"] .rpl-seg__btn.active { box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
 [data-theme="dark"] .rpl-children { background: rgba(0,0,0,0.2); }
