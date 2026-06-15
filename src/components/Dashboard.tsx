@@ -14,6 +14,7 @@ import { calcRealizedPL } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { TradeTypeDonutChart } from './TradeTypeDonutChart';
 import { HoldingsList } from './HoldingsList';
+import { RealizedPLPanel } from './RealizedPLPanel';
 
 const CARDS = [
   { id: 'buy',      label: '매수',   valueColor: 'red' },
@@ -109,7 +110,6 @@ export default function Dashboard() {
   }
 
   const realizedPL = calcRealizedPL(marketEntries);
-  const [showPLDetail, setShowPLDetail] = useState(false);
 
   // 보유 종목 현재가 (HoldingsList ↔ TradeTypeDonutChart 공유)
   const [holdingPrices, setHoldingPrices] = useState<Record<string, { price: number; changeRate: number } | null>>({});
@@ -117,6 +117,7 @@ export default function Dashboard() {
   const [pricesLoading, setPricesLoading] = useState(false);
   const pricesLoadingRef = useRef(false);
   const tradeListRef = useRef<HTMLDivElement>(null);
+  const plPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setHoldingPrices({});
@@ -164,8 +165,6 @@ export default function Dashboard() {
   }, [currentMarket]);
 
   const [showTradeForm, setShowTradeForm] = useState(false);
-
-  const hasPLData = realizedPL.rows.length > 0;
 
   function plCardValue() {
     if (marketEntries.filter((e) => e.type === 'sell').length === 0) return '—';
@@ -271,88 +270,18 @@ export default function Dashboard() {
           <div className="summary-grid">
             {/* 실현손익 카드 — 2열 차지 */}
             <div
-              className={`card card-pl${hasPLData ? '' : ' card-stat'}${showPLDetail ? ' active' : ''}`}
-              onClick={() => hasPLData && setShowPLDetail((v) => !v)}
-              style={{ cursor: hasPLData ? 'pointer' : 'default' }}
+              className="card card-pl"
+              style={{ cursor: 'pointer' }}
+              onClick={() => plPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             >
               <div className="label">실현손익</div>
               <div className={`value ${plCardColor()}`}>{plCardValue()}</div>
               <div className="note">
-                {realizedPL.hasIncompleteData
-                  ? '⚠ 매수 데이터 부분 누락'
-                  : hasPLData
-                  ? (showPLDetail ? '▲ 내역 접기' : '▼ 내역 보기')
-                  : '가중평균 원가 기준'}
+                {realizedPL.hasIncompleteData ? '⚠ 매수 데이터 부분 누락' : '가중평균 원가 기준'}
               </div>
             </div>
-            {/* 나머지 3열 채우는 스페이서 (실현손익 아래 행에 서머리 카드가 오도록) */}
+            {/* 나머지 3열 채우는 스페이서 */}
             <div className="summary-grid-spacer" style={{ gridColumn: 'span 3' }} aria-hidden="true" />
-
-            {/* 실현손익 계산 내역 패널 — 전체 너비 */}
-            {showPLDetail && hasPLData && (
-              <div className="pl-detail-panel">
-                <div className="pl-detail-header">
-                  <span>실현손익 계산 내역</span>
-                  <span className="pl-detail-hint">가중평균 원가 = 총 매수금액 ÷ 총 매수수량</span>
-                </div>
-                <div className="pl-detail-table-wrap">
-                  <table className="pl-detail-table">
-                    <thead>
-                      <tr>
-                        <th>종목</th>
-                        <th className="r">매도수량</th>
-                        <th className="r">가중평균 원가</th>
-                        <th className="r">매수원가 합계</th>
-                        <th className="r">매도금액</th>
-                        <th className="r">실현손익</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {realizedPL.rows.map((row) => {
-                        const fmt = (n: number) =>
-                          currentMarket === 'domestic'
-                            ? `₩${Math.round(n).toLocaleString('ko-KR')}`
-                            : `$${formatUsd(n)}`;
-                        return (
-                          <tr key={row.stock}>
-                            <td className="pl-detail-stock">{row.stock}</td>
-                            <td className="r">{row.sellQty.toLocaleString('en-US')}</td>
-                            {row.hasBuyData ? (
-                              <>
-                                <td className="r">{fmt(row.avgCostPerUnit)}</td>
-                                <td className="r">{fmt(row.buyCost)}</td>
-                                <td className="r">{fmt(row.sellProceeds)}</td>
-                                <td className={`r ${row.pl >= 0 ? 'pl-pos' : 'pl-neg'}`}>
-                                  {row.pl >= 0 ? '+' : '−'}{fmt(Math.abs(row.pl))}
-                                </td>
-                              </>
-                            ) : (
-                              <>
-                                <td className="r pl-na">—</td>
-                                <td className="r pl-na">—</td>
-                                <td className="r">{fmt(row.sellProceeds)}</td>
-                                <td className="r pl-na">매수 없음</td>
-                              </>
-                            )}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                    <tfoot>
-                      <tr>
-                        <td colSpan={5} className="r">합계</td>
-                        <td className={`r ${realizedPL.totalPL >= 0 ? 'pl-pos' : 'pl-neg'}`}>
-                          {realizedPL.totalPL >= 0 ? '+' : '−'}
-                          {currentMarket === 'domestic'
-                            ? `₩${Math.round(Math.abs(realizedPL.totalPL)).toLocaleString('ko-KR')}`
-                            : `$${formatUsd(Math.abs(realizedPL.totalPL))}`}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
-            )}
 
             {/* 서머리 카드 5개 */}
             {CARDS.map((card) => (
@@ -390,6 +319,11 @@ export default function Dashboard() {
               loading={pricesLoading}
               onFetch={fetchHoldingPrices}
             />
+          </div>
+
+          {/* 실현손익 상세 (일자별 / 종목별) */}
+          <div ref={plPanelRef}>
+            <RealizedPLPanel entries={marketEntries} market={currentMarket} />
           </div>
 
           {/* 탭 거래내역 */}

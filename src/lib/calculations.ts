@@ -136,6 +136,130 @@ export function calcRealizedPL(entries: Entry[]): RealizedPLResult {
   return { totalPL, hasIncompleteData, rows };
 }
 
+export interface PLByDateDetail {
+  stock: string;
+  qty: number;
+  proceeds: number;
+  buyCost: number | null;
+  pl: number | null;
+  hasBuyData: boolean;
+}
+
+export interface PLByDateRow {
+  date: string;
+  totalPL: number;
+  hasIncompleteData: boolean;
+  details: PLByDateDetail[];
+}
+
+export interface PLByStockDetail {
+  date: string;
+  qty: number;
+  proceeds: number;
+  buyCost: number | null;
+  pl: number | null;
+}
+
+export interface PLByStockRow {
+  stock: string;
+  totalPL: number;
+  hasIncompleteData: boolean;
+  details: PLByStockDetail[];
+}
+
+function buildAvgCostMap(entries: Entry[]): Record<string, number> {
+  const buys = entries.filter((e) => e.type === 'buy' && e.qty > 0);
+  const accum: Record<string, { totalCost: number; totalQty: number }> = {};
+  for (const b of buys) {
+    const key = b.stock.trim().toUpperCase();
+    if (!accum[key]) accum[key] = { totalCost: 0, totalQty: 0 };
+    accum[key].totalCost += b.settlement;
+    accum[key].totalQty += b.qty;
+  }
+  const map: Record<string, number> = {};
+  for (const key in accum) {
+    if (accum[key].totalQty > 0) map[key] = accum[key].totalCost / accum[key].totalQty;
+  }
+  return map;
+}
+
+export function calcPLByDate(entries: Entry[]): PLByDateRow[] {
+  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0);
+  if (sells.length === 0) return [];
+
+  const avgCostMap = buildAvgCostMap(entries);
+
+  const dateMap: Record<string, Record<string, { qty: number; proceeds: number; label: string }>> = {};
+  for (const s of sells) {
+    const date = s.date;
+    const key = s.stock.trim().toUpperCase();
+    if (!dateMap[date]) dateMap[date] = {};
+    if (!dateMap[date][key]) dateMap[date][key] = { qty: 0, proceeds: 0, label: s.stock.trim() };
+    dateMap[date][key].qty += s.qty;
+    dateMap[date][key].proceeds += s.settlement;
+  }
+
+  return Object.entries(dateMap)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, stockMap]) => {
+      const details: PLByDateDetail[] = [];
+      let totalPL = 0;
+      let hasIncompleteData = false;
+
+      for (const [key, { qty, proceeds, label }] of Object.entries(stockMap)) {
+        const avgCost = avgCostMap[key];
+        if (avgCost !== undefined) {
+          const buyCost = avgCost * qty;
+          const pl = proceeds - buyCost;
+          totalPL += pl;
+          details.push({ stock: label, qty, proceeds, buyCost, pl, hasBuyData: true });
+        } else {
+          hasIncompleteData = true;
+          details.push({ stock: label, qty, proceeds, buyCost: null, pl: null, hasBuyData: false });
+        }
+      }
+
+      return { date, totalPL, hasIncompleteData, details };
+    });
+}
+
+export function calcPLByStock(entries: Entry[]): PLByStockRow[] {
+  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0);
+  if (sells.length === 0) return [];
+
+  const avgCostMap = buildAvgCostMap(entries);
+
+  const stockMap: Record<string, { label: string; dateMap: Record<string, { qty: number; proceeds: number }> }> = {};
+  for (const s of sells) {
+    const key = s.stock.trim().toUpperCase();
+    if (!stockMap[key]) stockMap[key] = { label: s.stock.trim(), dateMap: {} };
+    if (!stockMap[key].dateMap[s.date]) stockMap[key].dateMap[s.date] = { qty: 0, proceeds: 0 };
+    stockMap[key].dateMap[s.date].qty += s.qty;
+    stockMap[key].dateMap[s.date].proceeds += s.settlement;
+  }
+
+  const rows: PLByStockRow[] = Object.entries(stockMap).map(([key, { label, dateMap }]) => {
+    const avgCost = avgCostMap[key];
+    let totalPL = 0;
+
+    const details: PLByStockDetail[] = Object.entries(dateMap)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([date, { qty, proceeds }]) => {
+        if (avgCost !== undefined) {
+          const buyCost = avgCost * qty;
+          const pl = proceeds - buyCost;
+          totalPL += pl;
+          return { date, qty, proceeds, buyCost, pl };
+        }
+        return { date, qty, proceeds, buyCost: null, pl: null };
+      });
+
+    return { stock: label, totalPL, hasIncompleteData: avgCost === undefined, details };
+  });
+
+  return rows.sort((a, b) => b.totalPL - a.totalPL);
+}
+
 export function calcEstimatedTax(totalPLUsd: number, exchangeRate: number): number {
   if (totalPLUsd <= 0 || exchangeRate <= 0) return 0;
   const taxable = totalPLUsd - 2500000 / exchangeRate;

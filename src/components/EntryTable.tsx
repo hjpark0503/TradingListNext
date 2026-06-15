@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Entry, TradeType, Market } from '@/lib/types';
-import { calcRealizedPL } from '@/lib/calculations';
 import { StockInput } from './StockInput';
 
 const TYPE_LABEL: Record<TradeType, string> = {
@@ -93,8 +92,6 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate, isSel
         }];
       })
     : [];
-
-  const realizedPL = panel === 'all' ? calcRealizedPL(list) : null;
 
   const allSelected  = list.length > 0 && list.every((e) => selectedIds.has(e.id));
   const someInPanel  = list.some((e) => selectedIds.has(e.id));
@@ -407,19 +404,6 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate, isSel
                 <span className="type-summary-settle">{fmtNum(ts.settlement, mkt)}</span>
               </li>
             ))}
-            {realizedPL && (
-              <li className={`type-summary-item type-summary-item--pl ${realizedPL.totalPL >= 0 ? 'pl-pos-row' : 'pl-neg-row'}`}>
-                <div className="type-summary-item__left">
-                  <span className="pl-label">실현손익</span>
-                  {realizedPL.hasIncompleteData && (
-                    <span className="pl-incomplete" title="일부 매수 데이터가 없어 추정값입니다">추정</span>
-                  )}
-                </div>
-                <span className="pl-val">
-                  {realizedPL.totalPL >= 0 ? '+' : ''}{fmtVal(realizedPL.totalPL, mkt)}
-                </span>
-              </li>
-            )}
           </ul>
         </div>
       )}

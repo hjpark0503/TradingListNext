@@ -1113,6 +1113,13 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .cap-gains__header-controls { flex-wrap:wrap; gap:8px; }
   /* 실현손익 내역 헤더 줄바꿈 */
   .pl-detail-header { flex-wrap:wrap; gap:6px; }
+  /* 실현손익 내역 패널 */
+  .rpl-header { flex-wrap:wrap; gap:8px; }
+  .rpl-parent { padding:11px 14px; }
+  .rpl-child  { padding:8px 14px 8px 28px; }
+  .rpl-col-header { padding:0 14px; }
+  .rpl-footer { padding:11px 14px; }
+  .rpl-parent__pl-wrap { flex-wrap:wrap; justify-content:flex-end; gap:2px; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1245,3 +1252,258 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 [data-theme="dark"] .confirm-btn-cancel:hover { background: rgba(255,255,255,.06); }
+
+/* ══════════════════════════════════════════════════════════════════
+   18. REALIZED PL PANEL (아코디언)
+   ══════════════════════════════════════════════════════════════════ */
+.rpl-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  animation: fadeUp .2s ease both;
+}
+
+.summary-grid .rpl-panel {
+  grid-column: 1 / -1;
+}
+
+
+.rpl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rpl-title {
+  font-size: .875rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.rpl-seg {
+  display: flex;
+  background: var(--bg-input);
+  border-radius: var(--r-sm);
+  padding: 3px;
+  gap: 2px;
+}
+
+.rpl-seg__btn {
+  padding: 5px 16px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-xs);
+  font-family: 'Pretendard', sans-serif;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.rpl-seg__btn.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+.rpl-body {
+  max-height: 420px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rpl-group {
+  border-bottom: 1px solid var(--border);
+}
+.rpl-group:last-child { border-bottom: none; }
+
+.rpl-parent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 20px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background .12s;
+  text-align: left;
+}
+.rpl-parent:hover { background: var(--bg-base); }
+.rpl-parent.open  { background: none; }
+
+.rpl-parent__left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rpl-parent__key {
+  font-family: 'Pretendard', sans-serif;
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.rpl-parent__key--stock { font-weight: 700; }
+
+.rpl-parent__sub {
+  font-size: .72rem;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border-radius: var(--r-xs);
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+.rpl-parent__pl {
+  font-family: 'Pretendard', sans-serif;
+  font-size: .9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: -.02em;
+}
+
+.rpl-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.rpl-children {
+  background: var(--bg-base);
+  border-top: 1px solid var(--border);
+  animation: fadeUp .15s ease;
+}
+
+.rpl-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px 9px 36px;
+  border-bottom: 1px solid var(--border);
+}
+.rpl-child:last-child { border-bottom: none; }
+
+.rpl-child__key {
+  flex: 1;
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rpl-child__key--date {
+  font-family: 'Pretendard', sans-serif;
+  font-size: .8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.rpl-child__qty {
+  font-family: 'Pretendard', sans-serif;
+  font-size: .78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.rpl-child__pl {
+  font-family: 'Pretendard', sans-serif;
+  font-size: .875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: -.02em;
+}
+
+.rpl-parent__pl-wrap,
+.rpl-child__pl-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rpl-rate {
+  font-family: 'Pretendard', sans-serif;
+  font-size: .75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: .8;
+}
+.rpl-rate--sm { font-size: .72rem; }
+
+.rpl-col-header {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+
+.rpl-col-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  font-family: 'Pretendard', sans-serif;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s;
+}
+.rpl-col-btn:hover { color: var(--text-secondary); }
+.rpl-col-btn.active {
+  color: var(--text-primary);
+}
+.rpl-col-btn--right { margin-left: auto; }
+
+.rpl-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 20px;
+  border-top: 1.5px solid var(--border);
+}
+.rpl-footer--pos { background: var(--loss-soft); }
+.rpl-footer--neg { background: var(--gain-soft); }
+
+.rpl-footer__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .875rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.rpl-footer__warn {
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--out-color);
+  background: var(--out-soft);
+  border-radius: var(--r-xs);
+  padding: 1px 6px;
+}
+
+.rpl-footer__val {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .rpl-parent:hover { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .rpl-parent.open  { background: none; }
+[data-theme="dark"] .rpl-seg__btn.active { box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+[data-theme="dark"] .rpl-children { background: rgba(0,0,0,0.2); }
