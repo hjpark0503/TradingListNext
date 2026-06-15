@@ -335,9 +335,9 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* 실현손익 상세 (일자별 / 종목별) */}
+          {/* 실현손익 (연도별/월별/일자별/종목별) */}
           <div ref={plPanelRef}>
-            <RealizedPLPanel entries={marketEntries} market={currentMarket} />
+            <RealizedPLPanel entries={marketEntries} market={currentMarket} isDark={isDark} />
           </div>
 
           {/* 탭 거래내역 */}

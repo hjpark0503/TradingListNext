@@ -260,6 +260,41 @@ export function calcPLByStock(entries: Entry[]): PLByStockRow[] {
   return rows.sort((a, b) => b.totalPL - a.totalPL);
 }
 
+export interface PLPeriodRow {
+  label: string;
+  pl: number;
+  hasIncompleteData: boolean;
+}
+
+export function calcPLByYear(entries: Entry[]): PLPeriodRow[] {
+  const byDate = calcPLByDate(entries);
+  const map: Record<string, { pl: number; incomplete: boolean }> = {};
+  for (const row of byDate) {
+    const year = row.date.slice(0, 4);
+    if (!map[year]) map[year] = { pl: 0, incomplete: false };
+    map[year].pl += row.totalPL;
+    if (row.hasIncompleteData) map[year].incomplete = true;
+  }
+  return Object.entries(map)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([label, { pl, incomplete }]) => ({ label, pl, hasIncompleteData: incomplete }));
+}
+
+export function calcPLByMonth(entries: Entry[], year: string): PLPeriodRow[] {
+  const byDate = calcPLByDate(entries);
+  const map: Record<string, { pl: number; incomplete: boolean }> = {};
+  for (const row of byDate) {
+    if (!row.date.startsWith(year)) continue;
+    const month = row.date.slice(0, 7);
+    if (!map[month]) map[month] = { pl: 0, incomplete: false };
+    map[month].pl += row.totalPL;
+    if (row.hasIncompleteData) map[month].incomplete = true;
+  }
+  return Object.entries(map)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([label, { pl, incomplete }]) => ({ label, pl, hasIncompleteData: incomplete }));
+}
+
 export function calcEstimatedTax(totalPLUsd: number, exchangeRate: number): number {
   if (totalPLUsd <= 0 || exchangeRate <= 0) return 0;
   const taxable = totalPLUsd - 2500000 / exchangeRate;
