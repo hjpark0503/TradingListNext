@@ -11,10 +11,11 @@ const TYPE_LABEL: Record<TradeType, string> = {
 const TYPE_CLASS: Record<TradeType, string> = {
   buy: 'badge-buy', sell: 'badge-sell', deposit: 'badge-in', withdraw: 'badge-out', div: 'badge-div',
 };
-const TYPE_BTNS: { id: TradeType; label: string }[] = [
+const TYPE_BTNS_ROW1: { id: TradeType; label: string }[] = [
   { id: 'buy', label: '매수' }, { id: 'sell', label: '매도' },
-  { id: 'deposit', label: '입금' }, { id: 'withdraw', label: '출금' },
-  { id: 'div', label: '배당금' },
+];
+const TYPE_BTNS_ROW2: { id: TradeType; label: string }[] = [
+  { id: 'deposit', label: '입금' }, { id: 'withdraw', label: '출금' }, { id: 'div', label: '배당금' },
 ];
 
 function calcSettlement(type: TradeType, amt: number, fee: number, tax: number): number {
@@ -191,13 +192,24 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate, isSel
           <div className="field">
             <label className="field-label">거래유형</label>
             <div className="type-ctrl">
-              {TYPE_BTNS.map((b) => (
-                <button key={b.id} type="button"
-                  className={`type-btn${d.type === b.id ? ' active' : ''}`}
-                  onClick={() => handleTypeChange(b.id)}>
-                  {b.label}
-                </button>
-              ))}
+              <div className="type-ctrl-row">
+                {TYPE_BTNS_ROW1.map((b) => (
+                  <button key={b.id} type="button"
+                    className={`type-btn${d.type === b.id ? ' active' : ''}`}
+                    onClick={() => handleTypeChange(b.id)}>
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+              <div className="type-ctrl-row">
+                {TYPE_BTNS_ROW2.map((b) => (
+                  <button key={b.id} type="button"
+                    className={`type-btn${d.type === b.id ? ' active' : ''}`}
+                    onClick={() => handleTypeChange(b.id)}>
+                    {b.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
