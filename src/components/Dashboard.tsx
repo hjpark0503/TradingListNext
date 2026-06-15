@@ -177,6 +177,14 @@ export default function Dashboard() {
     return realizedPL.totalPL >= 0 ? 'pl-pos' : 'pl-neg';
   }
 
+  function principalValue() {
+    const deposits = marketEntries.filter((e) => e.type === 'deposit').reduce((s, e) => s + e.settlement, 0);
+    const withdrawals = marketEntries.filter((e) => e.type === 'withdraw').reduce((s, e) => s + e.settlement, 0);
+    const principal = deposits - withdrawals;
+    if (currentMarket === 'domestic') return fmtKrw(principal);
+    return fmtUsd(principal);
+  }
+
   function cardCount(id: string) {
     const n = marketEntries.filter((e) => e.type === id).length;
     return `${n}건`;
@@ -280,8 +288,14 @@ export default function Dashboard() {
                 {realizedPL.hasIncompleteData ? '⚠ 매수 데이터 부분 누락' : '가중평균 원가 기준'}
               </div>
             </div>
-            {/* 나머지 3열 채우는 스페이서 */}
-            <div className="summary-grid-spacer" style={{ gridColumn: 'span 3' }} aria-hidden="true" />
+            {/* 원금 카드 — 2열 차지 */}
+            <div className="card card-stat card-principal">
+              <div className="label">원금</div>
+              <div className="value" style={{ fontSize: valueSize(principalValue()) }}>{principalValue()}</div>
+              <div className="note">입금 - 출금</div>
+            </div>
+            {/* 나머지 1열 채우는 스페이서 */}
+            <div className="summary-grid-spacer" style={{ gridColumn: 'span 1' }} aria-hidden="true" />
 
             {/* 서머리 카드 5개 */}
             {CARDS.map((card) => (

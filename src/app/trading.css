@@ -466,7 +466,8 @@ select.inp {
 .card-stat   { cursor:default; }
 .card-stat:hover { box-shadow:var(--shadow-sm); }
 
-.card-pl { background:var(--bg-surface); grid-column: span 2; }
+.card-pl        { background:var(--bg-surface); grid-column: span 2; }
+.card-principal { grid-column: span 2; }
 .card-pl .pl-pos { color:var(--loss) !important; }
 .card-pl .pl-neg { color:var(--gain) !important; }
 .card-pl .text-muted { color:var(--text-muted) !important; }
