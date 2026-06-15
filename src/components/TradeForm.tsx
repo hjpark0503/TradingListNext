@@ -7,7 +7,6 @@ import { fmtUsd, fmtKrw } from '@/lib/utils';
 
 interface TradeFormProps {
   market: Market;
-  onMarketChange: (m: Market) => void;
   onAdd: (entry: Entry) => void;
 }
 
@@ -44,7 +43,7 @@ function showToast(msg: string, kind: 'ok' | 'warn') {
   }, 2500);
 }
 
-export function TradeForm({ market, onMarketChange, onAdd }: TradeFormProps) {
+export function TradeForm({ market, onAdd }: TradeFormProps) {
   const [date, setDate]     = useState(today);
   const [type, setType]     = useState<TradeType | ''>('buy');
   const [stock, setStock]   = useState('');
@@ -159,6 +158,9 @@ export function TradeForm({ market, onMarketChange, onAdd }: TradeFormProps) {
             </svg>
             거래 직접 입력
           </span>
+          <span className="form-market-badge">
+            {market === 'domestic' ? '🇰🇷 국내' : '🌐 해외'}
+          </span>
         </div>
 
         <div className="form-body">
@@ -199,24 +201,6 @@ export function TradeForm({ market, onMarketChange, onAdd }: TradeFormProps) {
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* 종류 (해외/국내) */}
-          <div className="field">
-            <label className="field-label">종류</label>
-            <div className="seg-ctrl">
-              {(['domestic', 'overseas'] as Market[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  className={`seg-btn form-market-btn${market === m ? ' active' : ''}`}
-                  data-mkt={m}
-                  onClick={() => onMarketChange(m)}
-                >
-                  {m === 'domestic' ? '🇰🇷 국내' : '🌐 해외'}
-                </button>
-              ))}
             </div>
           </div>
 

@@ -212,19 +212,6 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate, isSel
             </div>
           </div>
 
-          <div className="field">
-            <label className="field-label">종류</label>
-            <div className="seg-ctrl">
-              {(['domestic', 'overseas'] as Market[]).map((m) => (
-                <button key={m} type="button"
-                  className={`seg-btn${d.market === m ? ' active' : ''}`}
-                  onClick={() => setDraft({ ...d, market: m })}>
-                  {m === 'domestic' ? '🇰🇷 국내' : '🌐 해외'}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="field" style={{ opacity: isCash ? 0.35 : 1 }}>
             <label className="field-label">종목명</label>
             <StockInput
@@ -369,7 +356,10 @@ export function EntryTable({ entries, panel, emptyMsg, onDelete, onUpdate, isSel
                 {list.map((e) => (
                   <tr key={e.id} className={`entry-row entry-row--clickable${selectedIds.has(e.id) ? ' entry-row--selected' : ''}`} onClick={() => openEdit(e)}>
                     <td className="col-text date-cell">{e.date}</td>
-                    <td className="col-text stock-cell">{e.stock || '—'}</td>
+                    <td className="col-text stock-cell">
+                      {e.stock || '—'}
+                      {e.detail && <span className="stock-detail">{e.detail}</span>}
+                    </td>
                     <td className="col-text">
                       <span className={`badge ${TYPE_CLASS[e.type]}`}>{TYPE_LABEL[e.type]}</span>
                     </td>

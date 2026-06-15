@@ -813,6 +813,15 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 .pl-neg { color:var(--gain) !important; font-weight:600; }
 .pl-na  { color:var(--text-muted); }
 
+/* 실현손익 카드 인라인 수익률 */
+.pl-rate-inline {
+  font-size: 1.0rem;
+  font-weight: 600;
+  margin-left: 5px;
+  letter-spacing: -.01em;
+  opacity: .9;
+}
+
 /* 삭제 버튼 */
 .btn-del {
   display:inline-flex; align-items:center; justify-content:center;
@@ -1696,4 +1705,72 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 [data-theme="dark"] .rpl-children         { background: rgba(0,0,0,.2); }
 [data-theme="dark"] .rpl-col-header       { background: rgba(0,0,0,.15); }
 [data-theme="dark"] .rpl-footer           { background: rgba(0,0,0,.12); }
+
+/* ══════════════════════════════════════════════════════════════════
+   19. EMPTY STATE
+   ══════════════════════════════════════════════════════════════════ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  gap: 10px;
+  text-align: center;
+  min-height: 360px;
+  background: var(--bg-surface);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-state__icon { margin-bottom: 8px; }
+
+.empty-state__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -.02em;
+}
+
+.empty-state__desc {
+  font-size: .875rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.empty-state__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   20. MISC UTILITIES
+   ══════════════════════════════════════════════════════════════════ */
+.text-muted { color: var(--text-muted) !important; }
+
+/* 거래 테이블 — 상세내용 서브텍스트 */
+.stock-detail {
+  display: block;
+  font-size: .72rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 2px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 거래 입력 폼 — 마켓 뱃지 */
+.form-market-badge {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border-radius: var(--r-sm);
+  padding: 4px 10px;
+}
 
