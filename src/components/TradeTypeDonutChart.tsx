@@ -162,7 +162,15 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
     },
   }), [isDark]);
 
-  if (holdings.length === 0) return null;
+  if (holdings.length === 0) return (
+    <div className="section" ref={containerRef}>
+      <h2>보유 종목 비중</h2>
+      <p className="chart-hint">평균단가 × 보유수량 기준</p>
+      <div className="chart-wrap" style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: 'var(--c-text-muted, #9ca3af)', fontSize: '0.875rem' }}>보유 종목이 없습니다.</span>
+      </div>
+    </div>
+  );
 
   const grandTotal = holdings.reduce((s, h) => s + h.value, 0);
   const borderColor = isDark ? '#1A1D27' : '#ffffff';

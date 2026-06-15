@@ -65,7 +65,33 @@ export function HoldingsList({ entries, market, prices, fetched, loading, onFetc
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [market, holdings.length]);
 
-  if (holdings.length === 0) return null;
+  if (holdings.length === 0) return (
+    <div className="section holdings-list">
+      <div className="holdings-header">
+        <h2>보유 종목 내역</h2>
+      </div>
+      <div className="holdings-table-wrap">
+        <table className="holdings-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>종목명</th>
+              <th className="r">평균단가</th>
+              <th className="r">현재가</th>
+              <th className="r">평가손익</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colSpan={5} style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--c-text-muted, #9ca3af)', fontSize: '0.875rem' }}>
+                보유 종목이 없습니다.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
   const fmt = (n: number) =>
     market === 'domestic'

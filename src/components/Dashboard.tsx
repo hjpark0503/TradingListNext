@@ -374,25 +374,23 @@ export default function Dashboard() {
           </div>
 
           {/* 보유 종목 비중 + 보유 종목 내역 */}
-          {marketEntries.length > 0 && (
-            <div className="holdings-row">
-              <TradeTypeDonutChart
-                entries={marketEntries}
-                market={currentMarket}
-                isDark={isDark}
-                prices={holdingPrices}
-                pricesFetched={pricesFetched}
-              />
-              <HoldingsList
-                entries={marketEntries}
-                market={currentMarket}
-                prices={holdingPrices}
-                fetched={pricesFetched}
-                loading={pricesLoading}
-                onFetch={fetchHoldingPrices}
-              />
-            </div>
-          )}
+          <div className="holdings-row">
+            <TradeTypeDonutChart
+              entries={marketEntries}
+              market={currentMarket}
+              isDark={isDark}
+              prices={holdingPrices}
+              pricesFetched={pricesFetched}
+            />
+            <HoldingsList
+              entries={marketEntries}
+              market={currentMarket}
+              prices={holdingPrices}
+              fetched={pricesFetched}
+              loading={pricesLoading}
+              onFetch={fetchHoldingPrices}
+            />
+          </div>
 
           {/* 탭 거래내역 */}
           <div className="section" ref={tradeListRef}>

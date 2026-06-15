@@ -132,7 +132,6 @@ export function TradeForm({ market, onMarketChange, onAdd }: TradeFormProps) {
       amount: entryAmt, settlement: entryStl,
     });
     showToast('내역이 추가되었습니다.', 'ok');
-    handleReset(true);
   }
 
   function handleReset(keepDate = false) {
