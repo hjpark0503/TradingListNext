@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Entry, TradeType, Market } from '@/lib/types';
 import { StockInput } from './StockInput';
+import { fmtUsd, fmtKrw } from '@/lib/utils';
 
 const TYPE_LABEL: Record<TradeType, string> = {
   buy: '매수', sell: '매도', deposit: '입금', withdraw: '출금', div: '배당금',
@@ -26,13 +27,11 @@ function calcSettlement(type: TradeType, amt: number, fee: number, tax: number):
 
 function fmtNum(n: number | undefined, mkt: Market): string {
   if (n === undefined || isNaN(n)) return '—';
-  if (mkt === 'domestic') return '₩' + Math.round(n).toLocaleString('ko-KR');
-  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return mkt === 'domestic' ? fmtKrw(n) : fmtUsd(n);
 }
 
 function fmtVal(n: number, mkt: Market): string {
-  if (mkt === 'domestic') return '₩' + Math.round(n).toLocaleString('ko-KR');
-  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return mkt === 'domestic' ? fmtKrw(n) : fmtUsd(n);
 }
 
 interface DraftState {

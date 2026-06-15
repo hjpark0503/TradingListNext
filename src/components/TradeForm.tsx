@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Entry, TradeType, Market } from '@/lib/types';
 import { StockInput } from './StockInput';
+import { fmtUsd, fmtKrw } from '@/lib/utils';
 
 interface TradeFormProps {
   market: Market;
@@ -61,8 +62,7 @@ export function TradeForm({ market, onMarketChange, onAdd }: TradeFormProps) {
   const cur       = market === 'overseas' ? 'USD' : 'KRW';
 
   function fmt(n: number) {
-    if (market === 'domestic') return sym + Math.round(n).toLocaleString('ko-KR');
-    return sym + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return market === 'domestic' ? fmtKrw(n) : fmtUsd(n);
   }
 
   const qtyN    = parseFloat(qty)    || 0;

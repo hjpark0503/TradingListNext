@@ -13,6 +13,21 @@ export function formatUsd(n: number | null | undefined): string {
   return (n < 0 ? '-' : '') + parts.join('.');
 }
 
+export function fmtUsd(n: number | null | undefined): string {
+  if (n == null || isNaN(n)) return '—';
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  const parts = abs.toFixed(2).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${sign}$${parts.join('.')}`;
+}
+
+export function fmtKrw(n: number | null | undefined): string {
+  if (n == null || isNaN(n)) return '—';
+  const sign = n < 0 ? '-' : '';
+  return `${sign}₩${Math.round(Math.abs(n)).toLocaleString('ko-KR')}`;
+}
+
 export function normalizeDateStr(s: unknown): string {
   if (!s) return '';
   const m = String(s).trim().replace(/\./g, '-').replace(/\//g, '-');

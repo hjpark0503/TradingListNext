@@ -9,7 +9,7 @@ import { TradeForm } from './TradeForm';
 import { EntryTable } from './EntryTable';
 import { Market, TradeType } from '@/lib/types';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
-import { formatUsd } from '@/lib/utils';
+import { fmtUsd, fmtKrw } from '@/lib/utils';
 import { calcRealizedPL } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { TradeTypeDonutChart } from './TradeTypeDonutChart';
@@ -169,8 +169,8 @@ export default function Dashboard() {
   function plCardValue() {
     if (marketEntries.filter((e) => e.type === 'sell').length === 0) return '—';
     const v = realizedPL.totalPL;
-    if (currentMarket === 'domestic') return `₩${Math.round(v).toLocaleString('ko-KR')}`;
-    return `$${formatUsd(v)}`;
+    if (currentMarket === 'domestic') return fmtKrw(v);
+    return fmtUsd(v);
   }
   function plCardColor() {
     if (marketEntries.filter((e) => e.type === 'sell').length === 0) return 'text-muted';
@@ -184,8 +184,8 @@ export default function Dashboard() {
   function cardNote(id: string) {
     const filtered = marketEntries.filter((e) => e.type === id);
     const total = filtered.reduce((s, e) => s + e.settlement, 0);
-    if (currentMarket === 'domestic') return `총 ₩${Math.round(total).toLocaleString('ko-KR')}`;
-    return `총 $${formatUsd(total)}`;
+    if (currentMarket === 'domestic') return `총 ${fmtKrw(total)}`;
+    return `총 ${fmtUsd(total)}`;
   }
 
   const handleExport = () => {

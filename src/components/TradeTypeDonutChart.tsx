@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import type { Entry, Market } from '@/lib/types';
+import { fmtUsd, fmtKrw } from '@/lib/utils';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -203,9 +204,7 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
           title: (items: any[]) => items[0]?.label ?? '',
           label: (ctx: any) => {
             const val = ctx.parsed as number;
-            const formatted = market === 'domestic'
-              ? `₩${Math.round(val).toLocaleString('ko-KR')}`
-              : `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const formatted = market === 'domestic' ? fmtKrw(val) : fmtUsd(val);
             const pct = grandTotal > 0 ? ((val / grandTotal) * 100).toFixed(1) : '0.0';
             return ` ${formatted}  (${pct}%)`;
           },
