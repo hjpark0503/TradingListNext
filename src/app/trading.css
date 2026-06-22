@@ -1705,6 +1705,44 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 [data-theme="dark"] .rpl-footer           { background: rgba(0,0,0,.12); }
 
 /* ══════════════════════════════════════════════════════════════════
+   19-A. PRINCIPAL / PL LINE CHART
+   ══════════════════════════════════════════════════════════════════ */
+.pl-line-chart-wrap {
+  height: 260px;
+  padding: 16px 18px 18px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.pl-line-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-wrap: nowrap;
+}
+
+.pl-line-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.pl-line-dot + .pl-line-dot { margin-left: 8px; }
+
+.pl-line-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .pl-line-chart-wrap { height: 220px; }
+  .pl-line-legend { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
    19. EMPTY STATE
    ══════════════════════════════════════════════════════════════════ */
 .empty-state {

@@ -300,3 +300,41 @@ export function calcEstimatedTax(totalPLUsd: number, exchangeRate: number): numb
   const taxable = totalPLUsd - 2500000 / exchangeRate;
   return taxable > 0 ? taxable * 0.22 : 0;
 }
+
+export interface PrincipalPLPoint {
+  date: string;
+  principal: number;
+  cumulativePL: number;
+}
+
+export function calcPrincipalAndPLOverTime(entries: Entry[]): PrincipalPLPoint[] {
+  const avgCostMap = buildAvgCostMap(entries);
+
+  const eventDates = new Set<string>();
+  for (const e of entries) {
+    if (e.type === 'deposit' || e.type === 'withdraw' || e.type === 'sell') {
+      eventDates.add(e.date);
+    }
+  }
+
+  const sortedDates = Array.from(eventDates).sort();
+  if (sortedDates.length === 0) return [];
+
+  let cumulativePrincipal = 0;
+  let cumulativePL = 0;
+  const result: PrincipalPLPoint[] = [];
+
+  for (const date of sortedDates) {
+    for (const e of entries.filter((e) => e.date === date)) {
+      if (e.type === 'deposit') cumulativePrincipal += e.settlement;
+      else if (e.type === 'withdraw') cumulativePrincipal -= e.settlement;
+      else if (e.type === 'sell' && e.qty > 0) {
+        const avgCost = avgCostMap[e.stock.trim().toUpperCase()];
+        if (avgCost !== undefined) cumulativePL += e.settlement - avgCost * e.qty;
+      }
+    }
+    result.push({ date, principal: cumulativePrincipal, cumulativePL });
+  }
+
+  return result;
+}

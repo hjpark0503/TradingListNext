@@ -133,7 +133,7 @@ export default function PortfolioPage() {
               <line x1="12" y1="43" x2="44" y2="43" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" opacity=".5" />
             </svg>
             <p className="empty-state__title">아직 거래 내역이 없어요</p>
-            <p className="empty-state__desc">거래내역 탭에서 매수 거래를 입력하면 보유 종목이 표시됩니다</p>
+            <p className="empty-state__desc">거래내역 탭에서 첫 거래를 기록해보세요</p>
           </div>
         )}
 
