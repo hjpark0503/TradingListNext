@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
 import { TradeTypeDonutChart } from './TradeTypeDonutChart';
-import { HoldingsList } from './HoldingsList';
-import { Market } from '@/lib/types';
+import { HoldingsList, calcHoldings, isETF, type HoldingFilter } from './HoldingsList';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
 
 export default function PortfolioPage() {
@@ -16,16 +15,50 @@ export default function PortfolioPage() {
   const { currentMarket, entries } = state;
   const marketEntries = entries.filter((e) => e.market === currentMarket);
 
+  const [filter, setFilter] = useState<HoldingFilter>('all');
+  const [showDeposit, setShowDeposit] = useState(true);
+
+  const fmt = (n: number) =>
+    currentMarket === 'domestic'
+      ? `₩${Math.round(n).toLocaleString('ko-KR')}`
+      : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const depositBalance = useMemo(() => {
+    return marketEntries.reduce((sum, e) => {
+      if (e.type === 'deposit') return sum + e.amount;
+      if (e.type === 'withdraw') return sum - e.amount;
+      if (e.type === 'sell') return sum + e.settlement;
+      if (e.type === 'buy') return sum - e.settlement;
+      if (e.type === 'div') return sum + e.amount;
+      return sum;
+    }, 0);
+  }, [marketEntries]);
+
+  const allHoldings = useMemo(() => calcHoldings(marketEntries), [marketEntries]);
+  const stockCount  = useMemo(() => allHoldings.filter((h) => !isETF(h.stock)).length, [allHoldings]);
+  const etfCount    = useMemo(() => allHoldings.filter((h) =>  isETF(h.stock)).length, [allHoldings]);
+
   const [holdingPrices, setHoldingPrices] = useState<Record<string, { price: number; changeRate: number } | null>>({});
   const [pricesFetched, setPricesFetched] = useState(false);
   const [pricesLoading, setPricesLoading] = useState(false);
   const pricesLoadingRef = useRef(false);
+
+  const stockValue = useMemo(() => {
+    return allHoldings.reduce((sum, h) => {
+      const cpData = holdingPrices[h.stock];
+      const cp = pricesFetched && cpData != null ? cpData.price : h.avgPrice;
+      return sum + cp * h.qty;
+    }, 0);
+  }, [allHoldings, holdingPrices, pricesFetched]);
+
+  const totalAssets = depositBalance + stockValue;
 
   useEffect(() => {
     setHoldingPrices({});
     setPricesFetched(false);
     setPricesLoading(false);
     pricesLoadingRef.current = false;
+    setFilter('all');
   }, [currentMarket]);
 
   const fetchHoldingPrices = useCallback(async (holdings: { stock: string }[]) => {
@@ -36,16 +69,12 @@ export default function PortfolioPage() {
     await Promise.all(
       holdings.map(async (h) => {
         try {
-          const searchRes = await fetch(
-            `/api/stocks?q=${encodeURIComponent(h.stock)}&market=${currentMarket}`
-          );
+          const searchRes = await fetch(`/api/stocks?q=${encodeURIComponent(h.stock)}&market=${currentMarket}`);
           if (!searchRes.ok) { results[h.stock] = null; return; }
           const candidates: { name: string; code: string }[] = await searchRes.json();
           const match = candidates.find((s) => s.name === h.stock) ?? candidates[0];
           if (!match) { results[h.stock] = null; return; }
-          const priceRes = await fetch(
-            `/api/stocks/price?code=${encodeURIComponent(match.code)}&market=${currentMarket}`
-          );
+          const priceRes = await fetch(`/api/stocks/price?code=${encodeURIComponent(match.code)}&market=${currentMarket}`);
           if (priceRes.ok) {
             const data = await priceRes.json();
             results[h.stock] = typeof data.price === 'number'
@@ -65,12 +94,7 @@ export default function PortfolioPage() {
     setPricesLoading(false);
   }, [currentMarket]);
 
-  function handleMarketChange(m: Market) {
-    switchMarket(m);
-  }
-
   const handleExport = () => exportEntriesToExcel(entries);
-
   const handleImport = async (file: File) => {
     try {
       const imported = await importEntriesFromExcel(file);
@@ -80,6 +104,12 @@ export default function PortfolioPage() {
     }
   };
 
+  const FILTERS: { key: HoldingFilter; label: string; count: number }[] = [
+    { key: 'all',   label: '보유 종목 전체', count: allHoldings.length },
+    { key: 'stock', label: '주식',           count: stockCount },
+    { key: 'etf',   label: 'ETF',            count: etfCount },
+  ];
+
   return (
     <div>
       <Header
@@ -87,7 +117,7 @@ export default function PortfolioPage() {
         onImport={handleImport}
         hasEntries={entries.length > 0}
         currentMarket={currentMarket}
-        onMarketChange={(m) => handleMarketChange(m as Market)}
+        onMarketChange={(m) => switchMarket(m as 'domestic' | 'overseas')}
         isDark={isDark}
         onToggleDark={toggleDark}
       />
@@ -109,14 +139,66 @@ export default function PortfolioPage() {
 
         {marketEntries.length > 0 && (
           <div className="dashboard-area">
-            <div className="holdings-col">
-              <TradeTypeDonutChart
-                entries={marketEntries}
-                market={currentMarket}
-                isDark={isDark}
-                prices={holdingPrices}
-                pricesFetched={pricesFetched}
-              />
+            <div className="portfolio-summary-cards">
+              <div className="card card-stat">
+                <div className="label">총 자산</div>
+                <div className="value">{fmt(totalAssets)}</div>
+              </div>
+              <div className="card card-stat">
+                <div className="label">주식 평가금액</div>
+                <div className="value">{fmt(stockValue)}</div>
+              </div>
+              <div className="card card-stat">
+                <div className="label">현금</div>
+                <div className="value">{fmt(depositBalance)}</div>
+              </div>
+            </div>
+
+            <div className="section holdings-combined">
+              <div className="tab-bar" style={{ padding: '0 20px' }}>
+                {FILTERS.map(({ key, label, count }) => (
+                  <button
+                    key={key}
+                    className={`tab-btn${filter === key ? ' active' : ''}`}
+                    onClick={() => setFilter(key)}
+                  >
+                    {label}
+                    <span className="holdings-filter-count">{count}</span>
+                  </button>
+                ))}
+                <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={showDeposit}
+                    onChange={() => setShowDeposit((v) => !v)}
+                    style={{ width: 14, height: 14, accentColor: 'var(--brand)', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>현금</span>
+                </label>
+                <button
+                  className="btn-ghost holdings-refresh-btn"
+                  onClick={() => fetchHoldingPrices(allHoldings)}
+                  disabled={pricesLoading}
+                  title={currentMarket === 'overseas' ? '티커 기준 현재가 조회' : '국내 종목은 코드 기준 조회 필요'}
+                >
+                  {pricesLoading ? '조회 중…' : pricesFetched ? '↻ 새로고침' : '현재가 조회'}
+                </button>
+              </div>
+
+              <div className="holdings-chart-section" style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+                <TradeTypeDonutChart
+                  entries={marketEntries}
+                  market={currentMarket}
+                  isDark={isDark}
+                  prices={holdingPrices}
+                  pricesFetched={pricesFetched}
+                  depositBalance={depositBalance}
+                  showDeposit={showDeposit}
+                  filter={filter}
+                  bare
+                />
+              </div>
+
               <HoldingsList
                 entries={marketEntries}
                 market={currentMarket}
@@ -124,6 +206,8 @@ export default function PortfolioPage() {
                 fetched={pricesFetched}
                 loading={pricesLoading}
                 onFetch={fetchHoldingPrices}
+                filter={filter}
+                bare
               />
             </div>
           </div>

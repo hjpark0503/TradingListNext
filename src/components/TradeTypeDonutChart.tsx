@@ -5,6 +5,7 @@ import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import type { Entry, Market } from '@/lib/types';
 import { fmtUsd, fmtKrw } from '@/lib/utils';
+import { type HoldingFilter, isETF } from './HoldingsList';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -14,15 +15,16 @@ const PALETTE = [
   '#B8D4E8', '#E8C3B5', '#C5DEB8', '#D4B8E0', '#F0D9A8',
 ];
 
+const DEPOSIT_COLOR = '#CBD5E1';
+
 interface Holding {
   stock: string;
   value: number;
   qty: number;
 }
 
-function calcHoldings(entries: Entry[]): Holding[] {
+function calcChartHoldings(entries: Entry[]): Holding[] {
   const map: Record<string, { buySettlement: number; buyQty: number; sellQty: number }> = {};
-
   for (const e of entries) {
     if (e.type !== 'buy' && e.type !== 'sell') continue;
     if (!e.stock || e.qty <= 0) continue;
@@ -35,7 +37,6 @@ function calcHoldings(entries: Entry[]): Holding[] {
       map[key].sellQty += e.qty;
     }
   }
-
   return Object.entries(map)
     .flatMap(([stock, { buySettlement, buyQty, sellQty }]) => {
       const remainQty = buyQty - sellQty;
@@ -51,11 +52,26 @@ interface Props {
   isDark: boolean;
   prices?: Record<string, { price: number; changeRate: number } | null>;
   pricesFetched?: boolean;
+  depositBalance?: number;
+  showDeposit?: boolean;
+  filter?: HoldingFilter;
+  bare?: boolean;
 }
 
-export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pricesFetched = false }: Props) {
+export function TradeTypeDonutChart({
+  entries, market, isDark,
+  prices = {}, pricesFetched = false,
+  depositBalance = 0,
+  showDeposit = true,
+  filter = 'all',
+  bare = false,
+}: Props) {
   const [isNarrow, setIsNarrow] = useState(false);
+  const [internalShowDeposit, setInternalShowDeposit] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const effectiveShowDeposit = bare ? showDeposit : internalShowDeposit;
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -67,16 +83,20 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
   }, []);
 
   const holdings = useMemo(() => {
-    const base = calcHoldings(entries);
-    if (!pricesFetched) return base;
-    // 현재가가 조회된 경우 현재가 × 수량으로 재계산
-    return base
+    const base = calcChartHoldings(entries);
+    const filtered = filter === 'stock'
+      ? base.filter((h) => !isETF(h.stock))
+      : filter === 'etf'
+      ? base.filter((h) => isETF(h.stock))
+      : base;
+    if (!pricesFetched) return filtered;
+    return filtered
       .map((h) => {
         const cp = prices[h.stock];
         return cp != null ? { ...h, value: cp.price * h.qty } : h;
       })
       .sort((a, b) => b.value - a.value);
-  }, [entries, prices, pricesFetched]);
+  }, [entries, prices, pricesFetched, filter]);
 
   const calloutPlugin = useMemo(() => ({
     id: 'calloutLabels',
@@ -96,13 +116,11 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
         y: number; isRight: boolean; color: string; text: string; maxWidth: number;
       };
 
-      // 1단계: 모든 레이블 정보 수집
       const items: LabelItem[] = [];
       meta.data.forEach((arc: any, i: number) => {
         if (!data[i] || data[i] <= 0) return;
         const { x, y, startAngle, endAngle, outerRadius } = arc.getProps(
-          ['x', 'y', 'startAngle', 'endAngle', 'outerRadius'],
-          true,
+          ['x', 'y', 'startAngle', 'endAngle', 'outerRadius'], true,
         );
         const span = endAngle - startAngle;
         if (span < 0.15) return;
@@ -121,27 +139,22 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
         const maxWidth = isRight ? chartWidth - textX - 2 : textX - 2;
 
         const pct = ((data[i] / total) * 100).toFixed(1);
-        const rawLabel = labels[i] as string;
-        const label = rawLabel.length > 8 ? rawLabel.slice(0, 7) + '…' : rawLabel;
+        const label = labels[i] as string;
 
         items.push({ x1, y1, midX, x3, y: idealY, isRight, color: colors[i], text: `${label}  ${pct}%`, maxWidth });
       });
 
-      // 2단계: 좌·우 각각 Y 겹침 해소 (위→아래 패스 후 아래→위 패스)
       const MIN_GAP = 13;
       for (const side of [true, false]) {
         const group = items.filter(l => l.isRight === side).sort((a, b) => a.y - b.y);
         for (let i = 1; i < group.length; i++) {
-          if (group[i].y < group[i - 1].y + MIN_GAP)
-            group[i].y = group[i - 1].y + MIN_GAP;
+          if (group[i].y < group[i - 1].y + MIN_GAP) group[i].y = group[i - 1].y + MIN_GAP;
         }
         for (let i = group.length - 2; i >= 0; i--) {
-          if (group[i].y > group[i + 1].y - MIN_GAP)
-            group[i].y = group[i + 1].y - MIN_GAP;
+          if (group[i].y > group[i + 1].y - MIN_GAP) group[i].y = group[i + 1].y - MIN_GAP;
         }
       }
 
-      // 3단계: 렌더링
       items.forEach(({ x1, y1, midX, x3, y, isRight, color, text, maxWidth }) => {
         ctx.beginPath();
         ctx.moveTo(x1, y1);
@@ -163,28 +176,29 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
     },
   }), [isDark]);
 
-  if (holdings.length === 0) return (
-    <div className="section" ref={containerRef}>
-      <h2>보유 종목 비중</h2>
-      <p className="chart-hint">평균단가 × 보유수량 기준</p>
-      <div className="chart-wrap" style={{ height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: 'var(--c-text-muted, #9ca3af)', fontSize: '0.875rem' }}>보유 종목이 없습니다.</span>
-      </div>
-    </div>
-  );
+  const showDepositSegment = effectiveShowDeposit && depositBalance > 0;
 
-  const grandTotal = holdings.reduce((s, h) => s + h.value, 0);
+  const chartLabels = showDepositSegment
+    ? [...holdings.map((h) => h.stock), '현금']
+    : holdings.map((h) => h.stock);
+  const chartValues = showDepositSegment
+    ? [...holdings.map((h) => h.value), depositBalance]
+    : holdings.map((h) => h.value);
+  const chartColors = showDepositSegment
+    ? [...holdings.map((_, i) => PALETTE[i % PALETTE.length]), DEPOSIT_COLOR]
+    : holdings.map((_, i) => PALETTE[i % PALETTE.length]);
+
+  const grandTotal = chartValues.reduce((s, v) => s + v, 0);
   const borderColor = isDark ? '#1A1D27' : '#ffffff';
 
   const chartData = {
-    labels: holdings.map((h) => h.stock),
+    labels: chartLabels,
     datasets: [{
-      data: holdings.map((h) => h.value),
-      backgroundColor: holdings.map((_, i) => PALETTE[i % PALETTE.length]),
+      data: chartValues,
+      backgroundColor: chartColors,
       borderColor,
       borderWidth: 2,
       hoverOffset: 8,
-      qtys: holdings.map((h) => h.qty),
     }],
   };
 
@@ -194,8 +208,8 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
     cutout: '58%',
     layout: {
       padding: isNarrow
-        ? { top: 36, bottom: 36, left: 80, right: 80 }
-        : { top: 28, bottom: 28, left: 120, right: 120 },
+        ? { top: 36, bottom: 36, left: 100, right: 100 }
+        : { top: 28, bottom: 28, left: 160, right: 160 },
     },
     plugins: {
       legend: { display: false },
@@ -213,12 +227,55 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
     },
   };
 
+  const isEmpty = holdings.length === 0 && !showDepositSegment;
+
+  if (bare) {
+    return (
+      <div ref={containerRef} className="holdings-chart-bare">
+        {isEmpty ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>보유 종목이 없습니다.</span>
+          </div>
+        ) : (
+          <Doughnut data={chartData} options={options} plugins={[calloutPlugin]} />
+        )}
+      </div>
+    );
+  }
+
+  if (isEmpty) return (
+    <div className="section" ref={containerRef}>
+      <div className="holdings-header">
+        <div>
+          <h2 style={{ padding: 0 }}>보유 종목 비중</h2>
+          <p className="chart-hint" style={{ padding: '4px 0 0' }}>평균단가 × 보유수량 기준</p>
+        </div>
+      </div>
+      <div className="chart-wrap" style={{ height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>보유 종목이 없습니다.</span>
+      </div>
+    </div>
+  );
+
   return (
     <div className="section" ref={containerRef}>
-      <h2>보유 종목 비중</h2>
-      <p className="chart-hint">
-        {pricesFetched ? '현재가 × 보유수량 기준' : '평균단가 × 보유수량 기준'}
-      </p>
+      <div className="holdings-header">
+        <div>
+          <h2 style={{ padding: 0 }}>보유 종목 비중</h2>
+          <p className="chart-hint" style={{ padding: '4px 0 0' }}>
+            {pricesFetched ? '현재가 × 보유수량 기준' : '평균단가 × 보유수량 기준'}
+          </p>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={internalShowDeposit}
+            onChange={() => setInternalShowDeposit((v) => !v)}
+            style={{ width: 14, height: 14, accentColor: 'var(--brand)', cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>현금</span>
+        </label>
+      </div>
       <div className="chart-wrap" style={{ height: 420 }}>
         <Doughnut data={chartData} options={options} plugins={[calloutPlugin]} />
       </div>
