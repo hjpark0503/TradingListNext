@@ -19,16 +19,19 @@ const INITIAL_STATE: DashboardState = {
 
 const LS_ENTRIES = 'tradinglist_entries';
 const LS_RATE = 'tradinglist_exchangeRate';
+const LS_MARKET = 'tradinglist_currentMarket';
 
 export function useDashboard() {
   const [state, setState] = useState<DashboardState>(() => {
     try {
       const raw = localStorage.getItem(LS_ENTRIES);
       const rate = localStorage.getItem(LS_RATE);
+      const market = localStorage.getItem(LS_MARKET);
       return {
         ...INITIAL_STATE,
         entries: raw ? (JSON.parse(raw) as Entry[]) : [],
         exchangeRate: rate ? Number(rate) : 1350,
+        currentMarket: (market as Market) ?? 'domestic',
       };
     } catch {
       return INITIAL_STATE;
@@ -42,6 +45,10 @@ export function useDashboard() {
   useEffect(() => {
     localStorage.setItem(LS_RATE, String(state.exchangeRate));
   }, [state.exchangeRate]);
+
+  useEffect(() => {
+    localStorage.setItem(LS_MARKET, state.currentMarket);
+  }, [state.currentMarket]);
 
   const setExchangeRate = useCallback((rate: number) => {
     setState((prev) => ({ ...prev, exchangeRate: rate }));

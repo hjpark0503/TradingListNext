@@ -167,7 +167,7 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
     <div className="section" ref={containerRef}>
       <h2>보유 종목 비중</h2>
       <p className="chart-hint">평균단가 × 보유수량 기준</p>
-      <div className="chart-wrap" style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="chart-wrap" style={{ height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ color: 'var(--c-text-muted, #9ca3af)', fontSize: '0.875rem' }}>보유 종목이 없습니다.</span>
       </div>
     </div>
@@ -219,7 +219,7 @@ export function TradeTypeDonutChart({ entries, market, isDark, prices = {}, pric
       <p className="chart-hint">
         {pricesFetched ? '현재가 × 보유수량 기준' : '평균단가 × 보유수량 기준'}
       </p>
-      <div className="chart-wrap" style={{ height: 260 }}>
+      <div className="chart-wrap" style={{ height: 420 }}>
         <Doughnut data={chartData} options={options} plugins={[calloutPlugin]} />
       </div>
     </div>

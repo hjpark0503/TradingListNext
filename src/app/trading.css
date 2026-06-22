@@ -182,26 +182,48 @@ body {
   display: grid;
   grid-template-columns: var(--aside-w) 1fr;
   gap: 24px;
-  max-width: 1440px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 24px var(--page-pad) 60px;
+  padding: 24px 0 100px;
   align-items: start;
 }
 
-/* 폼 닫힌 상태: 1컬럼, dashboard-area는 동일 너비로 중앙 정렬 */
+/* 폼 닫힌 상태: 1컬럼, dashboard-area는 전체 너비 */
 .main-layout--form-hidden {
   grid-template-columns: 1fr;
 }
-.main-layout--form-hidden .dashboard-area {
-  width: calc(100% - var(--aside-w) - 24px);
+.main-layout > .dashboard-area {
+  width: 100%;
+  min-width: 0;
+}
+
+/* ── 거래내역 페이지 레이아웃 ── */
+.trades-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 1100px;
   margin: 0 auto;
+  padding: 24px var(--page-pad) 100px;
+  align-items: start;
+  gap: 24px;
+}
+
+/* 폼 열릴 때: 뷰포트 너비로 확장해 테이블이 크게 줄지 않도록 */
+.trades-layout--with-form {
+  grid-template-columns: var(--aside-w) 1fr;
+  max-width: calc(100vw - 40px);
+}
+
+.trades-main {
+  min-width: 0;
+  max-width: 1100px;
 }
 
 /* FAB */
 .trade-form-fab {
   position: fixed;
-  bottom: 32px;
-  left: 32px;
+  bottom: 76px;
+  left: 24px;
   z-index: 190;
   width: 42px;
   height: 42px;
@@ -1772,5 +1794,88 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   background: var(--bg-input);
   border-radius: var(--r-sm);
   padding: 4px 10px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   8-C. HOLDINGS COL (포트폴리오 페이지 — 세로 배열)
+   ══════════════════════════════════════════════════════════════════ */
+.holdings-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.holdings-col > .section {
+  height: auto;
+}
+.holdings-col .holdings-list {
+  height: auto;
+  max-height: none;
+}
+.holdings-col .holdings-table-wrap {
+  flex: none;
+  overflow-y: visible;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   21. PAGE CONTENT (대시보드 / 포트폴리오 공통 래퍼)
+   ══════════════════════════════════════════════════════════════════ */
+.page-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px var(--page-pad) 100px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   22. BOTTOM NAVIGATION
+   ══════════════════════════════════════════════════════════════════ */
+.bottom-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  gap: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 6px;
+  box-shadow: var(--shadow-md);
+}
+
+.bottom-nav__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 22px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Pretendard', sans-serif;
+  font-size: .72rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+
+.bottom-nav__btn:hover {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+}
+
+.bottom-nav__btn.active {
+  background: var(--brand);
+  color: #fff;
+}
+
+[data-theme="dark"] .bottom-nav {
+  background: var(--bg-surface);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .bottom-nav__btn.active {
+  color: #fff;
 }
 
