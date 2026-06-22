@@ -208,8 +208,8 @@ export function TradeTypeDonutChart({
     cutout: '58%',
     layout: {
       padding: isNarrow
-        ? { top: 36, bottom: 36, left: 100, right: 100 }
-        : { top: 28, bottom: 28, left: 160, right: 160 },
+        ? { top: 8, bottom: 36, left: 100, right: 100 }
+        : { top: 4, bottom: 28, left: 160, right: 160 },
     },
     plugins: {
       legend: { display: false },

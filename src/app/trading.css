@@ -1800,7 +1800,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 }
 
 .holdings-chart-section {
-  padding: 8px 0 20px;
+  padding: 0 0 20px;
 }
 
 .holdings-chart-bare {

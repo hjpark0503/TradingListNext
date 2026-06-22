@@ -166,17 +166,9 @@ export default function PortfolioPage() {
                     <span className="holdings-filter-count">{count}</span>
                   </button>
                 ))}
-                <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={showDeposit}
-                    onChange={() => setShowDeposit((v) => !v)}
-                    style={{ width: 14, height: 14, accentColor: 'var(--brand)', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>현금</span>
-                </label>
                 <button
                   className="btn-ghost holdings-refresh-btn"
+                  style={{ marginLeft: 'auto' }}
                   onClick={() => fetchHoldingPrices(allHoldings)}
                   disabled={pricesLoading}
                   title={currentMarket === 'overseas' ? '티커 기준 현재가 조회' : '국내 종목은 코드 기준 조회 필요'}
@@ -186,6 +178,17 @@ export default function PortfolioPage() {
               </div>
 
               <div className="holdings-chart-section" style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '10px 30px 0' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showDeposit}
+                      onChange={() => setShowDeposit((v) => !v)}
+                      style={{ width: 14, height: 14, accentColor: 'var(--brand)', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>현금</span>
+                  </label>
+                </div>
                 <TradeTypeDonutChart
                   entries={marketEntries}
                   market={currentMarket}
