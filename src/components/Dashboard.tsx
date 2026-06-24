@@ -9,7 +9,7 @@ import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
 import { fmtUsd, fmtKrw } from '@/lib/utils';
 import { calcRealizedPL } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
-import { RealizedPLPanel } from './RealizedPLPanel';
+import { RealizedPLChart } from './RealizedPLChart';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
 import { NoticeTicker } from './NoticeTicker';
 
@@ -131,7 +131,7 @@ export default function Dashboard() {
             <PrincipalPLLineChart entries={marketEntries} market={currentMarket} isDark={isDark} />
 
             <div ref={plPanelRef}>
-              <RealizedPLPanel entries={marketEntries} market={currentMarket} isDark={isDark} />
+              <RealizedPLChart entries={marketEntries} market={currentMarket} isDark={isDark} />
             </div>
 
             {currentMarket === 'overseas' && (

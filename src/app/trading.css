@@ -1554,7 +1554,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   display: flex;
   align-items: center;
   padding: 0 16px;
-  background: var(--bg-base);
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -1829,7 +1829,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 [data-theme="dark"] .rpl-parent.open       { background: none; }
 [data-theme="dark"] .rpl-period-row:hover  { background: rgba(255,255,255,.03); }
 [data-theme="dark"] .rpl-children         { background: rgba(0,0,0,.2); }
-[data-theme="dark"] .rpl-col-header       { background: rgba(0,0,0,.15); }
+[data-theme="dark"] .rpl-col-header       { background: var(--bg-surface); }
 [data-theme="dark"] .rpl-footer           { background: rgba(0,0,0,.12); }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -2114,5 +2114,86 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 
 [data-theme="dark"] .bottom-nav__btn.active {
   color: #fff;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   20. ANNUAL PL CHART (연도별 실현손익)
+   ══════════════════════════════════════════════════════════════════ */
+
+.apl-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  animation: fadeUp .2s ease both;
+  margin-bottom: 0;
+}
+
+.apl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.apl-title {
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.apl-year-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.apl-year-btn {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: .8rem;
+  font-weight: 600;
+  font-family: 'Pretendard', sans-serif;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.apl-year-btn:hover {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+}
+
+.apl-year-btn.active {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.apl-chart-wrap {
+  height: 260px;
+  padding: 16px 16px 12px;
+}
+
+/* 차트와 내역 리스트 사이 탭 바 */
+.apl-tab-bar {
+  border-top: 1px solid var(--border);
+}
+
+/* ── 다크모드 ── */
+[data-theme="dark"] .apl-year-btn.active { box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+
+/* ── 모바일 ── */
+@media (max-width: 480px) {
+  .apl-header { padding: 12px 14px; gap: 8px; }
+  .apl-chart-wrap { height: 220px; padding: 12px 8px 10px; }
 }
 
