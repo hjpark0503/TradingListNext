@@ -42,17 +42,18 @@ export default function TradesPage() {
 
   const emptyImportRef = useRef<HTMLInputElement>(null);
 
-  function handleTrashClick() {
-    if (!isSelectMode) {
-      setIsSelectMode(true);
-      setSelectedIds(new Set());
-      return;
-    }
-    if (selectedIds.size > 0) {
-      setShowDeleteConfirm(true);
-      return;
-    }
+  function handleEnterSelect() {
+    setIsSelectMode(true);
+    setSelectedIds(new Set());
+  }
+
+  function handleCancelSelect() {
     setIsSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  function handleDeleteClick() {
+    if (selectedIds.size > 0) setShowDeleteConfirm(true);
   }
 
   function handleDeleteConfirm() {
@@ -212,21 +213,29 @@ export default function TradesPage() {
                     {tab.label}
                   </button>
                 ))}
-                <button
-                  className={`trash-btn tab-bar__trash${isSelectMode ? (selectedIds.size > 0 ? ' trash-btn--delete' : ' trash-btn--active') : ''}`}
-                  onClick={handleTrashClick}
-                  title={isSelectMode ? (selectedIds.size > 0 ? `${selectedIds.size}건 삭제` : '선택 취소') : '항목 선택 삭제'}
-                >
-                  {isSelectMode && selectedIds.size > 0 && (
-                    <span className="trash-btn__badge">{selectedIds.size}</span>
+                <div className="tab-bar__actions">
+                  {!isSelectMode ? (
+                    <button className="select-btn" onClick={handleEnterSelect}>선택</button>
+                  ) : (
+                    <>
+                      <button className="select-cancel-btn" onClick={handleCancelSelect}>취소</button>
+                      <button
+                        className={`trash-btn${selectedIds.size > 0 ? ' trash-btn--delete' : ' trash-btn--inactive'}`}
+                        onClick={handleDeleteClick}
+                        disabled={selectedIds.size === 0}
+                        title={selectedIds.size > 0 ? `${selectedIds.size}건 삭제` : '항목을 선택하세요'}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                          <path d="M10 11v6M14 11v6"/>
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                        {selectedIds.size > 0 ? `${selectedIds.size}건 삭제` : '삭제'}
+                      </button>
+                    </>
                   )}
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6M14 11v6"/>
-                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                  </svg>
-                </button>
+                </div>
               </div>
 
               {TABS.map((tab) => (

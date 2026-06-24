@@ -983,25 +983,45 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   vertical-align: middle;
 }
 
-/* 쓰레기통 버튼 (탭바 우측) */
-.tab-bar__trash { margin-left: auto; }
+/* 탭바 우측 액션 영역 */
+.tab-bar__actions {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 4px;
+  padding-right: 4px;
+  flex-shrink: 0;
+}
+.select-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 5px 10px; border-radius: 6px;
+  color: var(--text-muted);
+  font-family: 'Pretendard', sans-serif; font-size: .8125rem; font-weight: 600;
+  transition: color .15s, background .15s;
+}
+.select-btn:hover { color: var(--text-primary); background: var(--bg-input); }
+.select-cancel-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 5px 10px; border-radius: 6px;
+  color: var(--text-muted);
+  font-family: 'Pretendard', sans-serif; font-size: .8125rem; font-weight: 600;
+  transition: color .15s, background .15s;
+}
+.select-cancel-btn:hover { color: var(--text-primary); background: var(--bg-input); }
+
+/* 삭제 버튼 (선택 모드 전용) */
 .trash-btn {
   display: flex; align-items: center; gap: 5px;
   background: none; border: none; cursor: pointer;
-  padding: 5px 8px; border-radius: 6px;
+  padding: 5px 10px; border-radius: 6px;
+  font-family: 'Pretendard', sans-serif; font-size: .8125rem; font-weight: 600;
   color: #dc2626;
-  opacity: .7;
-  transition: opacity .15s;
+  transition: opacity .15s, background .15s;
 }
-.trash-btn:hover,
-.trash-btn:focus-visible { opacity: 1; outline: none; }
-.trash-btn--delete { font-weight: 600; opacity: 1; }
-.trash-btn__badge {
-  font-size: .75rem; font-weight: 700;
-  background: #dc2626; color: #fff;
-  border-radius: 99px; padding: 0 5px; min-width: 16px;
-  text-align: center; line-height: 16px;
+.trash-btn--inactive {
+  opacity: .35;
+  cursor: default;
 }
+.trash-btn--delete { opacity: 1; }
+.trash-btn--delete:hover { background: rgba(220,38,38,.08); }
 
 .modal-overlay {
   position: fixed; inset: 0; z-index: 500;
@@ -1170,6 +1190,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 [data-theme="dark"] .entry-row--selected td { background: rgba(239,68,68,.14); }
 [data-theme="dark"] .trash-btn--delete { color: #f87171; }
+[data-theme="dark"] .trash-btn--delete:hover { background: rgba(248,113,113,.1); }
 
 /* 다크모드 토글 버튼 */
 .btn-dark-toggle {
