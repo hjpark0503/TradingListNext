@@ -12,24 +12,12 @@ import { CapitalGainsTax } from './CapitalGainsTax';
 import { RealizedPLPanel } from './RealizedPLPanel';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
 
-const CARDS = [
-  { id: 'buy',      label: '매수',   valueColor: 'red' },
-  { id: 'sell',     label: '매도',   valueColor: 'blue' },
-  { id: 'deposit',  label: '입금',   valueColor: 'teal' },
-  { id: 'withdraw', label: '출금',   valueColor: 'orange' },
-  { id: 'div',      label: '배당금', valueColor: 'purple' },
-];
-
 function valueSize(val: string): string {
   const n = val.length;
   if (n <= 8)  return '1.3rem';
   if (n <= 11) return '1.25rem';
   if (n <= 14) return '1.0rem';
   return '0.875rem';
-}
-
-function valueSizeSm(_val: string): string {
-  return '1.2rem';
 }
 
 export default function Dashboard() {
@@ -76,17 +64,6 @@ export default function Dashboard() {
     return fmtUsd(principal);
   }
 
-  function cardCount(id: string) {
-    const n = marketEntries.filter((e) => e.type === id).length;
-    return `${n}건`;
-  }
-  function cardTotal(id: string) {
-    const filtered = marketEntries.filter((e) => e.type === id);
-    const total = filtered.reduce((s, e) => s + e.settlement, 0);
-    if (currentMarket === 'domestic') return fmtKrw(total);
-    return fmtUsd(total);
-  }
-
   function returnRateValue() {
     if (marketEntries.filter((e) => e.type === 'sell').length === 0) return '—';
     if (realizedPL.hasIncompleteData) return '—';
@@ -125,10 +102,10 @@ export default function Dashboard() {
 
         {marketEntries.length > 0 && (
           <div className="dashboard-area">
-            <div className="summary-grid">
+            <div className="summary-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
               <div
                 className="card card-pl"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', gridColumn: 'span 1' }}
                 onClick={() => plPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               >
                 <div className="label">실현손익</div>
@@ -143,19 +120,10 @@ export default function Dashboard() {
                 )}
               </div>
 
-              <div className="card card-stat card-principal">
+              <div className="card card-stat card-principal" style={{ gridColumn: 'span 1' }}>
                 <div className="label">원금</div>
                 <div className="value" style={{ fontSize: valueSize(principalValue()) }}>{principalValue()}</div>
               </div>
-
-              <div className="summary-grid-spacer" style={{ gridColumn: 'span 1' }} aria-hidden="true" />
-
-              {CARDS.map((card) => (
-                <div key={card.id} className="card card-stat" data-tab={card.id}>
-                  <div className="label">{card.label} {cardCount(card.id)}</div>
-                  <div className={`value ${card.valueColor}`} style={{ fontSize: valueSizeSm(cardTotal(card.id)) }}>{cardTotal(card.id)}</div>
-                </div>
-              ))}
             </div>
 
             <PrincipalPLLineChart entries={marketEntries} market={currentMarket} isDark={isDark} />

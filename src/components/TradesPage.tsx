@@ -9,6 +9,15 @@ import { TradeForm } from './TradeForm';
 import { EntryTable } from './EntryTable';
 import { Market, TradeType } from '@/lib/types';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
+import { fmtUsd, fmtKrw } from '@/lib/utils';
+
+const TRADE_CARDS = [
+  { id: 'buy',      label: '매수',   valueColor: 'red' },
+  { id: 'sell',     label: '매도',   valueColor: 'blue' },
+  { id: 'deposit',  label: '입금',   valueColor: 'teal' },
+  { id: 'withdraw', label: '출금',   valueColor: 'orange' },
+  { id: 'div',      label: '배당금', valueColor: 'purple' },
+];
 
 const TABS = [
   { id: 'all',      label: '전체' },
@@ -88,6 +97,14 @@ export default function TradesPage() {
   if (isSelectMode && marketEntries.length === 0) {
     setIsSelectMode(false);
     setSelectedIds(new Set());
+  }
+
+  function cardCount(id: string) {
+    return `${marketEntries.filter((e) => e.type === id).length}건`;
+  }
+  function cardTotal(id: string) {
+    const total = marketEntries.filter((e) => e.type === id).reduce((s, e) => s + e.settlement, 0);
+    return currentMarket === 'domestic' ? fmtKrw(total) : fmtUsd(total);
   }
 
   const handleExport = () => exportEntriesToExcel(entries);
@@ -197,6 +214,19 @@ export default function TradesPage() {
                   엑셀 불러오기
                 </button>
               </div>
+            </div>
+          )}
+
+          {marketEntries.length > 0 && (
+            <div className="summary-grid">
+              {TRADE_CARDS.map((card) => (
+                <div key={card.id} className="card card-stat" data-tab={card.id}>
+                  <div className="label">{card.label} {cardCount(card.id)}</div>
+                  <div className={`value ${card.valueColor}`} style={{ fontSize: '1.2rem' }}>
+                    {cardTotal(card.id)}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
