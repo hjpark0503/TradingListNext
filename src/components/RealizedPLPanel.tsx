@@ -8,8 +8,16 @@ import {
 } from '@/lib/calculations';
 import { formatUsd } from '@/lib/utils';
 
-type Tab = 'date' | 'stock';
-type Dir = 'asc' | 'desc';
+type Tab    = 'date' | 'stock';
+type Dir    = 'asc' | 'desc';
+type Period = '3M' | '6M' | '1Y' | 'all';
+
+const PERIODS: { key: Period; label: string }[] = [
+  { key: '3M',  label: '3M' },
+  { key: '6M',  label: '6M' },
+  { key: '1Y',  label: '1Y' },
+  { key: 'all', label: '전체' },
+];
 
 interface Props {
   entries: Entry[];
@@ -18,8 +26,8 @@ interface Props {
 }
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'date',  label: '일자별' },
-  { id: 'stock', label: '종목별' },
+  { id: 'date',  label: '일자' },
+  { id: 'stock', label: '종목' },
 ];
 
 function SortIcon({ active, dir }: { active: boolean; dir: Dir }) {
@@ -49,13 +57,29 @@ function ChevronIcon({ open }: { open: boolean }) {
 
 export function RealizedPLPanel({ entries, market, isDark = false }: Props) {
   const [tab, setTab]       = useState<Tab>('date');
+  const [period, setPeriod] = useState<Period>('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dateSort,  setDateSort]  = useState<{ col: 'date'  | 'pl'; dir: Dir }>({ col: 'date',  dir: 'desc' });
   const [stockSort, setStockSort] = useState<{ col: 'stock' | 'pl'; dir: Dir }>({ col: 'pl',    dir: 'desc' });
 
-  const byDate  = useMemo(() => calcPLByDate(entries),  [entries]);
-  const byStock = useMemo(() => calcPLByStock(entries), [entries]);
-  const total   = calcRealizedPL(entries);
+  // 기간 필터: 매수는 전체 유지(평균단가 보존), 매도만 기간 내로 제한
+  const filteredEntries = useMemo(() => {
+    if (period === 'all') return entries;
+    const sells = entries.filter((e) => e.type === 'sell');
+    if (sells.length === 0) return entries;
+    const latestDate = sells.reduce((m, e) => (e.date > m ? e.date : m), sells[0].date);
+    const end   = new Date(latestDate);
+    const start = new Date(end);
+    if (period === '3M') start.setMonth(start.getMonth() - 3);
+    else if (period === '6M') start.setMonth(start.getMonth() - 6);
+    else if (period === '1Y') start.setFullYear(start.getFullYear() - 1);
+    const startStr = start.toISOString().slice(0, 10);
+    return entries.filter((e) => e.type !== 'sell' || e.date >= startStr);
+  }, [entries, period]);
+
+  const byDate  = useMemo(() => calcPLByDate(filteredEntries),  [filteredEntries]);
+  const byStock = useMemo(() => calcPLByStock(filteredEntries), [filteredEntries]);
+  const total   = useMemo(() => calcRealizedPL(filteredEntries), [filteredEntries]);
 
   // 통계
   const winningStocks       = byStock.filter((r) => !r.hasIncompleteData && r.totalPL > 0).length;
@@ -107,16 +131,29 @@ export function RealizedPLPanel({ entries, market, isDark = false }: Props) {
       {/* ── 헤더 ── */}
       <div className="rpl-header">
         <span className="rpl-title">실현손익 내역</span>
-        <div className="rpl-seg">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className={`rpl-seg__btn${tab === t.id ? ' active' : ''}`}
-              onClick={() => { setTab(t.id); setExpanded(new Set()); }}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+          <div className="rpl-seg">
+            {PERIODS.map((p) => (
+              <button
+                key={p.key}
+                className={`rpl-seg__btn${period === p.key ? ' active' : ''}`}
+                onClick={() => { setPeriod(p.key); setExpanded(new Set()); }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="rpl-seg">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                className={`rpl-seg__btn${tab === t.id ? ' active' : ''}`}
+                onClick={() => { setTab(t.id); setExpanded(new Set()); }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
