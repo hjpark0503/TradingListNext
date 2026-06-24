@@ -106,6 +106,9 @@ export function TradeForm({ market, onAdd }: TradeFormProps) {
     if ((isTrade || isDiv) && !stock.trim()) {
       showToast('종목명을 입력해주세요.', 'warn'); return;
     }
+    if (isTrade && qtyN <= 0) {
+      showToast('수량을 입력해주세요.', 'warn'); return;
+    }
 
     let entryAmt: number, entryStl: number;
     let entryQty = qtyN, entryPrc = priceN, entryFee = feeN, entryTax = taxN;
