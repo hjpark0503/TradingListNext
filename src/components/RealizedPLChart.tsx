@@ -76,9 +76,10 @@ interface Props {
   entries: Entry[];
   market: Market;
   isDark: boolean;
+  year?: string;
 }
 
-export function RealizedPLChart({ entries, market, isDark }: Props) {
+export function RealizedPLChart({ entries, market, isDark, year: externalYear }: Props) {
   // ── 연도 선택 ──
   const years = useMemo(
     () =>
@@ -91,7 +92,7 @@ export function RealizedPLChart({ entries, market, isDark }: Props) {
   const [selectedYear, setSelectedYear] = useState<string>(
     () => years[0] ?? String(new Date().getFullYear())
   );
-  const currentYear = years.includes(selectedYear) ? selectedYear : (years[0] ?? selectedYear);
+  const currentYear = externalYear ?? (years.includes(selectedYear) ? selectedYear : (years[0] ?? selectedYear));
 
   const monthData = useMemo(() => calcMonthlyData(entries, currentYear), [entries, currentYear]);
 
@@ -274,17 +275,19 @@ export function RealizedPLChart({ entries, market, isDark }: Props) {
       {/* ── 헤더: 연도 탭 ── */}
       <div className="apl-header">
         <span className="apl-title">연도별 실현손익</span>
-        <div className="apl-year-tabs">
-          {years.map((y) => (
-            <button
-              key={y}
-              className={`apl-year-btn${currentYear === y ? ' active' : ''}`}
-              onClick={() => setSelectedYear(y)}
-            >
-              {y}
-            </button>
-          ))}
-        </div>
+        {!externalYear && (
+          <div className="apl-year-tabs">
+            {years.map((y) => (
+              <button
+                key={y}
+                className={`apl-year-btn${currentYear === y ? ' active' : ''}`}
+                onClick={() => setSelectedYear(y)}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {years.length === 0 ? (

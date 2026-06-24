@@ -45,6 +45,16 @@ export default function TradesPage() {
   const { activeTab, currentMarket, entries } = state;
   const marketEntries = entries.filter((e) => e.market === currentMarket);
 
+  const [selectedYear, setSelectedYear] = useState<string>('전체');
+
+  const years = ['전체', ...Array.from(
+    new Set(marketEntries.map((e) => e.date?.slice(0, 4)).filter(Boolean))
+  ).sort((a, b) => Number(b) - Number(a))];
+
+  const filteredEntries = selectedYear === '전체'
+    ? marketEntries
+    : marketEntries.filter((e) => e.date?.startsWith(selectedYear));
+
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -93,6 +103,7 @@ export default function TradesPage() {
     switchMarket(m);
     setIsSelectMode(false);
     setSelectedIds(new Set());
+    setSelectedYear('전체');
   }
 
   if (isSelectMode && marketEntries.length === 0) {
@@ -101,10 +112,10 @@ export default function TradesPage() {
   }
 
   function cardCount(id: string) {
-    return `${marketEntries.filter((e) => e.type === id).length}건`;
+    return `${filteredEntries.filter((e) => e.type === id).length}건`;
   }
   function cardTotal(id: string) {
-    const total = marketEntries.filter((e) => e.type === id).reduce((s, e) => s + e.settlement, 0);
+    const total = filteredEntries.filter((e) => e.type === id).reduce((s, e) => s + e.settlement, 0);
     return currentMarket === 'domestic' ? fmtKrw(total) : fmtUsd(total);
   }
 
@@ -220,6 +231,20 @@ export default function TradesPage() {
           )}
 
           {marketEntries.length > 0 && (
+            <div className="year-filter">
+              {years.map((y) => (
+                <button
+                  key={y}
+                  className={`year-filter__btn${selectedYear === y ? ' active' : ''}`}
+                  onClick={() => setSelectedYear(y)}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {marketEntries.length > 0 && (
             <div className="summary-grid">
               {TRADE_CARDS.map((card) => (
                 <div key={card.id} className="card card-stat" data-tab={card.id}>
@@ -277,7 +302,7 @@ export default function TradesPage() {
                   id={`panel-${tab.id}`}
                 >
                   <EntryTable
-                    entries={marketEntries}
+                    entries={filteredEntries}
                     panel={tab.id as TradeType | 'all'}
                     emptyMsg={EMPTY_MSGS[tab.id]}
                     onDelete={deleteEntry}

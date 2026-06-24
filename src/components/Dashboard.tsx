@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
@@ -27,12 +27,22 @@ export default function Dashboard() {
 
   const { exchangeRate, currentMarket, entries } = state;
   const marketEntries = entries.filter((e) => e.market === currentMarket);
-  const realizedPL = calcRealizedPL(marketEntries);
+
+  const [selectedYear, setSelectedYear] = useState<string>('전체');
+  const years = ['전체', ...Array.from(
+    new Set(marketEntries.map((e) => e.date?.slice(0, 4)).filter(Boolean))
+  ).sort((a, b) => Number(b) - Number(a))];
+  const filteredEntries = selectedYear === '전체'
+    ? marketEntries
+    : marketEntries.filter((e) => e.date?.startsWith(selectedYear));
+
+  const realizedPL = calcRealizedPL(filteredEntries);
 
   const plPanelRef = useRef<HTMLDivElement>(null);
 
   function handleMarketChange(m: Market) {
     switchMarket(m);
+    setSelectedYear('전체');
   }
 
   const handleExport = () => exportEntriesToExcel(entries);
@@ -47,26 +57,26 @@ export default function Dashboard() {
   };
 
   function plCardValue() {
-    if (marketEntries.filter((e) => e.type === 'sell').length === 0) return '—';
+    if (filteredEntries.filter((e) => e.type === 'sell').length === 0) return '—';
     const v = realizedPL.totalPL;
     if (currentMarket === 'domestic') return fmtKrw(v);
     return fmtUsd(v);
   }
   function plCardColor() {
-    if (marketEntries.filter((e) => e.type === 'sell').length === 0) return 'text-muted';
+    if (filteredEntries.filter((e) => e.type === 'sell').length === 0) return 'text-muted';
     return realizedPL.totalPL >= 0 ? 'pl-pos' : 'pl-neg';
   }
 
   function principalValue() {
-    const deposits = marketEntries.filter((e) => e.type === 'deposit').reduce((s, e) => s + e.settlement, 0);
-    const withdrawals = marketEntries.filter((e) => e.type === 'withdraw').reduce((s, e) => s + e.settlement, 0);
+    const deposits = filteredEntries.filter((e) => e.type === 'deposit').reduce((s, e) => s + e.settlement, 0);
+    const withdrawals = filteredEntries.filter((e) => e.type === 'withdraw').reduce((s, e) => s + e.settlement, 0);
     const principal = deposits - withdrawals;
     if (currentMarket === 'domestic') return fmtKrw(principal);
     return fmtUsd(principal);
   }
 
   function returnRateValue() {
-    if (marketEntries.filter((e) => e.type === 'sell').length === 0) return '—';
+    if (filteredEntries.filter((e) => e.type === 'sell').length === 0) return '—';
     if (realizedPL.hasIncompleteData) return '—';
     const totalBuyCost = realizedPL.rows.reduce((s, r) => s + r.buyCost, 0);
     if (totalBuyCost === 0) return '—';
@@ -104,6 +114,18 @@ export default function Dashboard() {
 
         {marketEntries.length > 0 && (
           <div className="dashboard-area">
+            <div className="year-filter">
+              {years.map((y) => (
+                <button
+                  key={y}
+                  className={`year-filter__btn${selectedYear === y ? ' active' : ''}`}
+                  onClick={() => setSelectedYear(y)}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+
             <div className="summary-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
               <div
                 className="card card-pl"
@@ -128,10 +150,15 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <PrincipalPLLineChart entries={marketEntries} market={currentMarket} isDark={isDark} />
+            <PrincipalPLLineChart key={selectedYear} entries={filteredEntries} market={currentMarket} isDark={isDark} />
 
             <div ref={plPanelRef}>
-              <RealizedPLChart entries={marketEntries} market={currentMarket} isDark={isDark} />
+              <RealizedPLChart
+                entries={marketEntries}
+                market={currentMarket}
+                isDark={isDark}
+                year={selectedYear === '전체' ? undefined : selectedYear}
+              />
             </div>
 
             {currentMarket === 'overseas' && (

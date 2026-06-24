@@ -256,7 +256,7 @@ body {
   grid-template-columns: 1fr;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 24px var(--page-pad) 100px;
+  padding: 12px var(--page-pad) 100px;
   align-items: start;
   gap: 24px;
 }
@@ -1086,7 +1086,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   margin: 0 auto;
   width: 15px; height: 15px;
   cursor: pointer;
-  accent-color: var(--accent);
+  accent-color: var(--brand);
   vertical-align: middle;
 }
 
@@ -2059,7 +2059,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 .page-content {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 24px var(--page-pad) 100px;
+  padding: 12px var(--page-pad) 100px;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -2197,3 +2197,35 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .apl-chart-wrap { height: 220px; padding: 12px 8px 10px; }
 }
 
+
+/* ── 거래내역 연도 필터 ── */
+.year-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: -8px;
+}
+
+.year-filter__btn {
+  padding: 4px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.year-filter__btn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.year-filter__btn.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
