@@ -1783,7 +1783,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
    19-A. PRINCIPAL / PL LINE CHART
    ══════════════════════════════════════════════════════════════════ */
 .pl-line-chart-wrap {
-  height: 260px;
+  height: 290px;
   padding: 16px 18px 18px;
   position: relative;
   box-sizing: border-box;
@@ -1812,9 +1812,78 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   white-space: nowrap;
 }
 
+/* ── 차트 헤더 레이아웃 ── */
+.pl-chart-header {
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  align-items: flex-start;
+}
+
+.pl-chart-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pl-chart-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pl-chart-header__controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── KPI 칩 ── */
+.pl-chart-kpis {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pl-chart-kpi {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: var(--r-pill);
+  letter-spacing: -.01em;
+  font-family: 'Pretendard', sans-serif;
+}
+.pl-chart-kpi em {
+  font-style: normal;
+  font-weight: 600;
+  opacity: .85;
+}
+
+.pl-chart-kpi--pos {
+  color: var(--in-color);
+  background: var(--in-soft);
+}
+.pl-chart-kpi--neg {
+  color: var(--loss);
+  background: var(--loss-soft);
+}
+.pl-chart-kpi--neutral {
+  color: var(--text-secondary);
+  background: var(--bg-input);
+}
+
 @media (max-width: 600px) {
-  .pl-line-chart-wrap { height: 220px; }
-  .pl-line-legend { display: none; }
+  .pl-line-chart-wrap   { height: 210px; }
+  .pl-line-legend       { display: none; }
+  .pl-chart-header__controls { gap: 4px; }
+  .pl-chart-kpi--neutral { display: none; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
