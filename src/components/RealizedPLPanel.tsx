@@ -1,24 +1,12 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  type TooltipItem,
-  type ChartOptions,
-} from 'chart.js';
 import { Entry, Market } from '@/lib/types';
 import {
   calcPLByDate,
   calcPLByStock,
   calcRealizedPL,
 } from '@/lib/calculations';
-import { formatUsd, fmtKrw } from '@/lib/utils';
-
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
+import { formatUsd } from '@/lib/utils';
 
 type Tab = 'date' | 'stock';
 type Dir = 'asc' | 'desc';
@@ -74,91 +62,6 @@ export function RealizedPLPanel({ entries, market, isDark = false }: Props) {
   const totalStocksWithData = byStock.filter((r) => !r.hasIncompleteData).length;
   const winRate             = totalStocksWithData > 0 ? Math.round((winningStocks / totalStocksWithData) * 100) : null;
   const totalSellCount      = byDate.reduce((s, r) => s + r.details.length, 0);
-
-  const chartRows = useMemo(() => {
-    if (tab === 'date')
-      return [...byDate].reverse().map((r) => ({ label: r.date, pl: r.totalPL, hasIncompleteData: r.hasIncompleteData }));
-    return byStock.map((r) => ({ label: r.stock, pl: r.totalPL, hasIncompleteData: r.hasIncompleteData }));
-  }, [tab, byDate, byStock]);
-
-  function chartLabel(label: string) {
-    if (tab === 'date') return label.slice(5);
-    return label;
-  }
-
-  const chartValues = chartRows.map((r) => r.pl);
-
-  const GAIN      = isDark ? '#4D94FF' : '#246CF9';
-  const LOSS      = '#F04452';
-  const textColor = isDark ? '#A8B3C1' : '#6B7684';
-  const gridColor = isDark ? 'rgba(42,47,62,.7)' : 'rgba(229,232,235,.8)';
-
-  function fmtAxisKrw(n: number) {
-    const abs = Math.abs(n), sign = n < 0 ? '-' : '';
-    if (abs >= 100_000_000) return `${sign}₩${(abs / 100_000_000).toFixed(0)}억`;
-    if (abs >= 10_000)      return `${sign}₩${(abs / 10_000).toFixed(0)}만`;
-    return `${sign}₩${abs.toFixed(0)}`;
-  }
-  function fmtAxisUsd(n: number) {
-    const abs = Math.abs(n), sign = n < 0 ? '-' : '';
-    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
-    if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(0)}K`;
-    return `${sign}$${abs.toFixed(0)}`;
-  }
-  function fmtTooltip(v: number) {
-    const abs = Math.abs(v), prefix = v >= 0 ? '+' : '−';
-    if (market === 'domestic') return prefix + fmtKrw(abs).replace(/^-?₩/, '₩');
-    const f = abs.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    return `${prefix}$${f}`;
-  }
-
-  const chartData = {
-    labels: chartRows.map((r) => chartLabel(r.label)),
-    datasets: [{
-      label: '실현손익',
-      data: chartValues,
-      backgroundColor: chartValues.map((v) => v >= 0 ? LOSS : GAIN),
-      borderRadius: 6,
-      borderSkipped: false as const,
-      maxBarThickness: 28,
-      barPercentage: 0.5,
-      categoryPercentage: 0.6,
-    }],
-  };
-
-  const chartOptions: ChartOptions<'bar'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: { label: (item: TooltipItem<'bar'>) => ' ' + fmtTooltip(item.raw as number) },
-        backgroundColor: isDark ? '#252836' : '#fff',
-        titleColor:      isDark ? '#F0F4F8' : '#191F28',
-        bodyColor:       isDark ? '#A8B3C1' : '#4E5968',
-        borderColor:     isDark ? '#2A2F3E' : '#E5E8EB',
-        borderWidth: 1, padding: 10, cornerRadius: 8,
-      },
-    },
-    layout: { padding: { left: 4, bottom: 2 } },
-    scales: {
-      x: {
-        ticks: { color: textColor, font: { size: 11, family: 'Pretendard, sans-serif' }, maxRotation: 45 },
-        grid: { display: false },
-        border: { color: gridColor },
-      },
-      y: {
-        ticks: {
-          color: textColor,
-          font: { size: 11, family: 'Pretendard, sans-serif' },
-          callback: (v) => market === 'domestic' ? fmtAxisKrw(Number(v)) : fmtAxisUsd(Number(v)),
-          maxTicksLimit: 5,
-        },
-        grid: { color: gridColor },
-        border: { color: 'transparent' },
-      },
-    },
-  };
 
   const sortedByDate = [...byDate].sort((a, b) => {
     const mul = dateSort.dir === 'asc' ? 1 : -1;
@@ -221,21 +124,7 @@ export function RealizedPLPanel({ entries, market, isDark = false }: Props) {
         <div className="panel-empty">매도 내역이 없습니다.</div>
       ) : (
         <>
-          {/* ── 2열: 차트(좌) + 리스트(우) ── */}
-          <div className="rpl-content">
-
-            {/* 차트 열 */}
-            <div className="rpl-chart-col">
-              {chartValues.length > 0
-                ? <div className="rpl-chart-canvas-wrap">
-                    <Bar data={chartData} options={chartOptions} />
-                  </div>
-                : <div className="rpl-chart-empty">해당 연도 데이터 없음</div>
-              }
-            </div>
-
-            {/* 리스트 열 */}
-            <div className="rpl-list-col">
+          <div className="rpl-list-col">
               {tab === 'date' ? (
                 byDate.length === 0
                   ? <div className="panel-empty">매도 내역이 없습니다.</div>
@@ -338,7 +227,6 @@ export function RealizedPLPanel({ entries, market, isDark = false }: Props) {
                       })}
                     </>
               )}
-            </div>
           </div>
 
           {/* ── 푸터: KPI + 통계 ── */}
