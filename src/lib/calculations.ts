@@ -295,6 +295,74 @@ export function calcPLByMonth(entries: Entry[], year: string): PLPeriodRow[] {
     .map(([label, { pl, incomplete }]) => ({ label, pl, hasIncompleteData: incomplete }));
 }
 
+export interface PeriodPLSummary {
+  pl: number;
+  buyCost: number;
+  hasIncompleteData: boolean;
+}
+export interface MonthPLItem extends PeriodPLSummary { key: string }
+export interface QuarterPLItem extends PeriodPLSummary { label: string; months: MonthPLItem[] }
+export interface HalfPLItem extends PeriodPLSummary { label: string; quarters: QuarterPLItem[] }
+export interface YearPLItem extends PeriodPLSummary { label: string; halves: HalfPLItem[] }
+
+export function calcPLPeriodTable(entries: Entry[]): YearPLItem[] {
+  if (entries.length === 0) return [];
+
+  // Build P&L map keyed by "YYYY-MM" from sell transactions
+  const byDate = calcPLByDate(entries);
+  type Acc = { pl: number; buyCost: number; incomplete: boolean };
+  const plMap = new Map<string, Acc>();
+  for (const row of byDate) {
+    const key = row.date.slice(0, 7);
+    let pl = 0, buyCost = 0;
+    for (const d of row.details) {
+      if (d.hasBuyData) { pl += d.pl!; buyCost += d.buyCost!; }
+    }
+    const acc = plMap.get(key);
+    if (acc) { acc.pl += pl; acc.buyCost += buyCost; if (row.hasIncompleteData) acc.incomplete = true; }
+    else plMap.set(key, { pl, buyCost, incomplete: row.hasIncompleteData });
+  }
+
+  // All years that appear in any entry
+  const years = Array.from(new Set(entries.map((e) => e.date?.slice(0, 4)).filter(Boolean)))
+    .sort((a, b) => b.localeCompare(a));
+
+  return years.map((yearLabel) => {
+    const halves: HalfPLItem[] = ['상반기', '하반기'].map((halfLabel, hi) => {
+      const quarters: QuarterPLItem[] = [1, 2].map((qIdx) => {
+        const qNum = hi * 2 + qIdx;
+        const qMonths = [1, 2, 3].map((offset) => (qNum - 1) * 3 + offset);
+        const months: MonthPLItem[] = qMonths.map((mn) => {
+          const key = `${yearLabel}-${String(mn).padStart(2, '0')}`;
+          const acc = plMap.get(key);
+          return { key, pl: acc?.pl ?? 0, buyCost: acc?.buyCost ?? 0, hasIncompleteData: acc?.incomplete ?? false };
+        });
+        return {
+          label: `${qNum}분기`,
+          pl: months.reduce((s, m) => s + m.pl, 0),
+          buyCost: months.reduce((s, m) => s + m.buyCost, 0),
+          hasIncompleteData: months.some((m) => m.hasIncompleteData),
+          months,
+        };
+      });
+      return {
+        label: halfLabel,
+        pl: quarters.reduce((s, q) => s + q.pl, 0),
+        buyCost: quarters.reduce((s, q) => s + q.buyCost, 0),
+        hasIncompleteData: quarters.some((q) => q.hasIncompleteData),
+        quarters,
+      };
+    });
+    return {
+      label: yearLabel,
+      pl: halves.reduce((s, h) => s + h.pl, 0),
+      buyCost: halves.reduce((s, h) => s + h.buyCost, 0),
+      hasIncompleteData: halves.some((h) => h.hasIncompleteData),
+      halves,
+    };
+  });
+}
+
 export function calcEstimatedTax(totalPLUsd: number, exchangeRate: number): number {
   if (totalPLUsd <= 0 || exchangeRate <= 0) return 0;
   const taxable = totalPLUsd - 2500000 / exchangeRate;

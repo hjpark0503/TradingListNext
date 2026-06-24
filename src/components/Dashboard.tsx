@@ -12,6 +12,7 @@ import { CapitalGainsTax } from './CapitalGainsTax';
 import { RealizedPLChart } from './RealizedPLChart';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
 import { NoticeTicker } from './NoticeTicker';
+import { PLPeriodTable } from './PLPeriodTable';
 
 function valueSize(val: string): string {
   const n = val.length;
@@ -152,7 +153,8 @@ export default function Dashboard() {
 
             <PrincipalPLLineChart key={selectedYear} entries={filteredEntries} market={currentMarket} isDark={isDark} />
 
-            <div ref={plPanelRef}>
+            <div className="pl-charts-row" ref={plPanelRef}>
+              <PLPeriodTable entries={marketEntries} market={currentMarket} />
               <RealizedPLChart
                 entries={marketEntries}
                 market={currentMarket}
