@@ -248,9 +248,19 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
     <div className="apl-panel">
       {/* ── 헤더: 연도 탭 ── */}
       <div className="apl-header">
-        <span className="apl-title">{view === 'list' ? '연도별 실현손익 내역' : '월별 실현손익'}</span>
-        {view === 'list' && years.length > 0 && (
-          <span className="apl-year-label">{currentYear}</span>
+        <span className="apl-title">{view === 'list' ? '상세 실현손익' : '월별 실현손익'}</span>
+        {showList && years.length > 0 && (
+          <div className="rpl-seg">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                className={`rpl-seg__btn${tab === t.id ? ' active' : ''}`}
+                onClick={() => { setTab(t.id); setExpanded(new Set()); }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         )}
         {!externalYear && showChart && (
           <div className="apl-year-tabs">
@@ -276,21 +286,6 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
             <div className="apl-chart-wrap">
               <Bar data={chartData} options={chartOptions} />
             </div>
-          )}
-
-          {/* ── 일자 / 종목 탭 ── */}
-          {showList && (
-          <div className="tab-bar apl-tab-bar">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                className={`tab-btn${tab === t.id ? ' active' : ''}`}
-                onClick={() => { setTab(t.id); setExpanded(new Set()); }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
           )}
 
           {/* ── 내역 리스트 ── */}

@@ -160,7 +160,7 @@ export default function PortfolioPage() {
             </div>
 
             <div className="section holdings-combined">
-              <div className="tab-bar" style={{ padding: '0 20px' }}>
+              <div className="tab-bar">
                 {FILTERS.map(({ key, label, count }) => (
                   <button
                     key={key}
@@ -193,7 +193,7 @@ export default function PortfolioPage() {
               </div>
 
               <div className="holdings-chart-section" style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '10px 30px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '10px 20px 0' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
                     <input
                       type="checkbox"

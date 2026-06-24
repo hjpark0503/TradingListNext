@@ -164,7 +164,7 @@ export function HoldingsList({ entries, market, prices, fetched, loading, onFetc
 
   return (
     <div className="section holdings-list">
-      <div className="tab-bar" style={{ padding: '0 20px' }}>
+      <div className="tab-bar">
         {holdings.length > 0 && FILTERS.map(({ key, label, count }) => (
           <button
             key={key}
