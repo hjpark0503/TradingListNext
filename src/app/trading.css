@@ -1880,10 +1880,12 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 }
 
 @media (max-width: 600px) {
-  .pl-line-chart-wrap   { height: 210px; }
-  .pl-line-legend       { display: none; }
-  .pl-chart-header__controls { gap: 4px; }
-  .pl-chart-kpi--neutral { display: none; }
+  .pl-line-chart-wrap            { height: 210px; }
+  .pl-line-legend                { display: none; }
+  .pl-chart-kpi--neutral         { display: none; }
+  .pl-chart-header               { gap: 8px 6px; }
+  .pl-chart-header__controls     { gap: 4px; margin-left: 0; flex-wrap: wrap; }
+  .rpl-seg__btn                  { padding: 4px 9px; font-size: .72rem; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
