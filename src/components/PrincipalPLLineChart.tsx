@@ -263,7 +263,7 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
         order: 2,
       },
       {
-        label: '평가금액',
+        label: '누적 실현금액',
         data: evalData,
         borderColor: plColor,
         backgroundColor: 'transparent',
@@ -300,7 +300,7 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
               ? ` (${rate >= 0 ? '+' : ''}${rate.toFixed(2)}%)`
               : '';
             return [
-              ` 평가금액: ${fmtAbs(v)}`,
+              ` 누적 실현금액: ${fmtAbs(v)}`,
               ` 손  익: ${fmtSigned(pl)}${rateStr}`,
             ];
           },
@@ -359,7 +359,7 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
             <span className="pl-line-dot" style={{ background: principalColor }} />
             <span className="pl-line-label">원금</span>
             <span className="pl-line-dot" style={{ background: plColor }} />
-            <span className="pl-line-label">평가금액</span>
+            <span className="pl-line-label">누적 실현금액</span>
           </div>
         </div>
 
