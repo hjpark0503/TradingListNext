@@ -11,6 +11,7 @@ import { calcRealizedPL } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { RealizedPLPanel } from './RealizedPLPanel';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
+import { NoticeTicker } from './NoticeTicker';
 
 function valueSize(val: string): string {
   const n = val.length;
@@ -84,6 +85,7 @@ export default function Dashboard() {
         isDark={isDark}
         onToggleDark={toggleDark}
       />
+      <NoticeTicker />
 
       <div className="page-content">
         {marketEntries.length === 0 && (

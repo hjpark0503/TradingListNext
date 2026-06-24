@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
+import { NoticeTicker } from './NoticeTicker';
 import { TradeTypeDonutChart } from './TradeTypeDonutChart';
 import { HoldingsList, calcHoldings, isETF, type HoldingFilter } from './HoldingsList';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
@@ -124,6 +125,7 @@ export default function PortfolioPage() {
         isDark={isDark}
         onToggleDark={toggleDark}
       />
+      <NoticeTicker />
 
       <div className="page-content">
         {marketEntries.length === 0 && (

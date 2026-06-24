@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
+import { NoticeTicker } from './NoticeTicker';
 import { TradeForm } from './TradeForm';
 import { EntryTable } from './EntryTable';
 import { Market, TradeType } from '@/lib/types';
@@ -157,6 +158,7 @@ export default function TradesPage() {
         isDark={isDark}
         onToggleDark={toggleDark}
       />
+      <NoticeTicker />
 
       <button
         className={`trade-form-fab${showTradeForm ? ' trade-form-fab--open' : ''}`}
