@@ -133,10 +133,12 @@ export function HoldingsList({ entries, market, prices, fetched, loading, onFetc
                   <span className="holding-change holding-change--muted">{h.qty.toLocaleString('en-US')}주</span>
                 </td>
                 <td className="r">
-                  {hasCp ? fmt(cp!) : '—'}
-                  <span className={`holding-change ${hasCp && changeRate != null ? (changeRate > 0 ? 'pl-pos' : changeRate < 0 ? 'pl-neg' : '') : ''}`}>
-                    {hasCp && changeRate != null ? `${changeRate > 0 ? '+' : ''}${changeRate.toFixed(2)}%` : ' '}
-                  </span>
+                  {loading && !fetched
+                    ? <><span className="skeleton-cell" /><span className="holding-change"> </span></>
+                    : hasCp
+                      ? <>{fmt(cp!)}<span className={`holding-change ${changeRate != null ? (changeRate > 0 ? 'pl-pos' : changeRate < 0 ? 'pl-neg' : '') : ''}`}>{changeRate != null ? `${changeRate > 0 ? '+' : ''}${changeRate.toFixed(2)}%` : ' '}</span></>
+                      : <>{'—'}<span className="holding-change"> </span></>
+                  }
                 </td>
                 <td className={`r ${plClass}`}>
                   {unrealizedPL == null ? '—' : `${unrealizedPL > 0 ? '+' : ''}${fmtPL(unrealizedPL)}`}

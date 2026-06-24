@@ -41,6 +41,7 @@ export default function PortfolioPage() {
   const [holdingPrices, setHoldingPrices] = useState<Record<string, { price: number; changeRate: number } | null>>({});
   const [pricesFetched, setPricesFetched] = useState(false);
   const [pricesLoading, setPricesLoading] = useState(false);
+  const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
   const pricesLoadingRef = useRef(false);
 
   const stockValue = useMemo(() => {
@@ -57,6 +58,7 @@ export default function PortfolioPage() {
     setHoldingPrices({});
     setPricesFetched(false);
     setPricesLoading(false);
+    setLastFetchedAt(null);
     pricesLoadingRef.current = false;
     setFilter('all');
   }, [currentMarket]);
@@ -90,6 +92,7 @@ export default function PortfolioPage() {
     );
     setHoldingPrices(results);
     setPricesFetched(true);
+    setLastFetchedAt(new Date());
     pricesLoadingRef.current = false;
     setPricesLoading(false);
   }, [currentMarket]);
@@ -166,15 +169,25 @@ export default function PortfolioPage() {
                     <span className="holdings-filter-count">{count}</span>
                   </button>
                 ))}
-                <button
-                  className="btn-ghost holdings-refresh-btn"
-                  style={{ marginLeft: 'auto' }}
-                  onClick={() => fetchHoldingPrices(allHoldings)}
-                  disabled={pricesLoading}
-                  title={currentMarket === 'overseas' ? '티커 기준 현재가 조회' : '국내 종목은 코드 기준 조회 필요'}
-                >
-                  {pricesLoading ? '조회 중…' : pricesFetched ? '↻ 새로고침' : '현재가 조회'}
-                </button>
+                <div className="holdings-section-actions">
+                  {lastFetchedAt && (
+                    <span className="holdings-fetch-time">
+                      {lastFetchedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })} 기준
+                    </span>
+                  )}
+                  <button
+                    className={`holdings-refresh-icon-btn${pricesLoading ? ' loading' : ''}`}
+                    onClick={() => fetchHoldingPrices(allHoldings)}
+                    disabled={pricesLoading}
+                    title={currentMarket === 'overseas' ? '티커 기준 현재가 새로고침' : '국내 종목 현재가 새로고침'}
+                    aria-label="현재가 새로고침"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <polyline points="23 4 23 10 17 10" />
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <div className="holdings-chart-section" style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>

@@ -586,6 +586,60 @@ select.inp {
 .holdings-refresh-btn:hover { color: var(--text-primary); }
 .holdings-refresh-btn:disabled { opacity: .5; cursor: default; }
 
+.holdings-section-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.holdings-fetch-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: -0.01em;
+}
+.holdings-refresh-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--brand);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  padding: 0;
+}
+.holdings-refresh-icon-btn:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+.holdings-refresh-icon-btn:disabled { opacity: .45; cursor: default; }
+.holdings-refresh-icon-btn.loading svg {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 스켈레톤 shimmer */
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-cell {
+  display: inline-block;
+  width: 62px;
+  height: 13px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--bg-input) 25%, var(--border) 50%, var(--bg-input) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  vertical-align: middle;
+}
+
 /* 보유 종목 필터 카운트 배지 */
 .holdings-filter-count {
   font-size: .68rem;
