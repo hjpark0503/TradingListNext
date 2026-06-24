@@ -20,14 +20,6 @@ import { fmtUsd, fmtKrw } from '@/lib/utils';
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler);
 
 type ViewMode = 'monthly' | 'daily';
-type Period = '3M' | '6M' | '1Y' | 'all';
-
-const PERIODS: { key: Period; label: string }[] = [
-  { key: '3M',  label: '3M' },
-  { key: '6M',  label: '6M' },
-  { key: '1Y',  label: '1Y' },
-  { key: 'all', label: '전체' },
-];
 
 interface Props {
   entries: Entry[];
@@ -72,28 +64,16 @@ function aggregateMonthly(points: PrincipalPLPoint[]): PrincipalPLPoint[] {
   return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function filterByPeriod(points: PrincipalPLPoint[], period: Period): PrincipalPLPoint[] {
-  if (period === 'all' || points.length === 0) return points;
-  const lastDate = points[points.length - 1].date;
-  const end = new Date(lastDate);
-  const start = new Date(end);
-  if (period === '3M') start.setMonth(start.getMonth() - 3);
-  else if (period === '6M') start.setMonth(start.getMonth() - 6);
-  else if (period === '1Y') start.setFullYear(start.getFullYear() - 1);
-  const startStr = start.toISOString().slice(0, 10);
-  return points.filter((p) => p.date >= startStr);
-}
 
 export function PrincipalPLLineChart({ entries, market, isDark = false }: Props) {
-  const [view, setView]     = useState<ViewMode>('monthly');
-  const [period, setPeriod] = useState<Period>('all');
+  const [view, setView] = useState<ViewMode>('monthly');
 
   const allPoints  = useMemo(() => calcPrincipalAndPLOverTime(entries), [entries]);
   const basePoints = useMemo(
     () => (view === 'monthly' ? aggregateMonthly(allPoints) : allPoints),
     [view, allPoints]
   );
-  const points = useMemo(() => filterByPeriod(basePoints, period), [basePoints, period]);
+  const points = basePoints;
 
   // Ref holds the latest label info so the stable plugin can always read fresh values
   const lastFmtRef = useRef<LastFmtRef>({
@@ -363,19 +343,8 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
           </div>
         </div>
 
-        {/* 컨트롤: 기간 + 일별/월별 */}
+        {/* 컨트롤: 일별/월별 */}
         <div className="pl-chart-header__controls">
-          <div className="rpl-seg">
-            {PERIODS.map(({ key, label }) => (
-              <button
-                key={key}
-                className={`rpl-seg__btn${period === key ? ' active' : ''}`}
-                onClick={() => setPeriod(key)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
           <div className="rpl-seg">
             {(['monthly', 'daily'] as const).map((v) => (
               <button

@@ -1,5 +1,5 @@
 'use client';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -9,7 +9,6 @@ import {
   Tooltip,
   type TooltipItem,
   type ChartOptions,
-  type Plugin,
 } from 'chart.js';
 import type { Entry, Market } from '@/lib/types';
 import { calcPLByDate, calcPLByStock, calcRealizedPL } from '@/lib/calculations';
@@ -77,9 +76,11 @@ interface Props {
   market: Market;
   isDark: boolean;
   year?: string;
+  view?: 'chart' | 'list' | 'all';
+  onYearChange?: (year: string) => void;
 }
 
-export function RealizedPLChart({ entries, market, isDark, year: externalYear }: Props) {
+export function RealizedPLChart({ entries, market, isDark, year: externalYear, view = 'all', onYearChange }: Props) {
   // ── 연도 선택 ──
   const years = useMemo(
     () =>
@@ -94,6 +95,13 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear }:
   );
   const currentYear = externalYear ?? (years.includes(selectedYear) ? selectedYear : (years[0] ?? selectedYear));
 
+  const showChart = view === 'chart' || view === 'all';
+  const showList  = view === 'list'  || view === 'all';
+
+  useEffect(() => {
+    if (view === 'chart') onYearChange?.(currentYear);
+  }, [currentYear, view]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const monthData = useMemo(() => calcMonthlyData(entries, currentYear), [entries, currentYear]);
 
   // ── 차트 색상 ──
@@ -101,40 +109,7 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear }:
   const LOSS_COLOR   = isDark ? '#4D94FF' : '#246CF9';
   const textColor    = isDark ? '#A8B3C1' : '#4E5968';
   const gridColor    = isDark ? 'rgba(42,47,62,0.8)' : 'rgba(229,232,235,0.8)';
-  const mutedColor   = isDark ? '#5C6778' : '#8B95A1';
 
-  const monthDataRef = useRef(monthData);
-  const colorsRef = useRef({ PROFIT_COLOR, LOSS_COLOR, mutedColor });
-  useLayoutEffect(() => {
-    monthDataRef.current = monthData;
-    colorsRef.current = { PROFIT_COLOR, LOSS_COLOR, mutedColor };
-  });
-
-  const rateLabelsPlugin = useMemo((): Plugin<'bar'> => ({
-    id: 'rateLabels',
-    afterDraw(chart) {
-      const { ctx, scales } = chart;
-      const xAxis = scales['x'];
-      if (!xAxis) return;
-      const { PROFIT_COLOR: pos, LOSS_COLOR: neg, mutedColor: muted } = colorsRef.current;
-      ctx.save();
-      ctx.font = `bold 9.5px 'Pretendard', sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      for (let i = 0; i < 12; i++) {
-        const x = xAxis.getPixelForTick(i);
-        const y = xAxis.bottom - 14;
-        const m = monthDataRef.current[i];
-        const rate = m.hasData && m.buyCost > 0 ? (m.pl / m.buyCost) * 100 : 0;
-        const text = !m.hasData || rate === 0
-          ? '0%'
-          : `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%`;
-        ctx.fillStyle = !m.hasData || rate === 0 ? muted : rate > 0 ? pos : neg;
-        ctx.fillText(text, x, y);
-      }
-      ctx.restore();
-    },
-  }), []);
 
   const values   = monthData.map((m) => m.pl);
   const chartData = {
@@ -187,7 +162,6 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear }:
     layout: { padding: { left: 4, right: 4 } },
     scales: {
       x: {
-        afterFit(scale) { scale.height += 18; },
         ticks: { color: textColor, font: { size: 11, family: 'Pretendard, sans-serif' } },
         grid: { display: false },
         border: { color: gridColor },
@@ -274,8 +248,11 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear }:
     <div className="apl-panel">
       {/* ── 헤더: 연도 탭 ── */}
       <div className="apl-header">
-        <span className="apl-title">연도별 실현손익</span>
-        {!externalYear && (
+        <span className="apl-title">{view === 'list' ? '연도별 실현손익 내역' : '월별 실현손익'}</span>
+        {view === 'list' && years.length > 0 && (
+          <span className="apl-year-label">{currentYear}</span>
+        )}
+        {!externalYear && showChart && (
           <div className="apl-year-tabs">
             {years.map((y) => (
               <button
@@ -295,11 +272,14 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear }:
       ) : (
         <>
           {/* ── 막대 차트 ── */}
-          <div className="apl-chart-wrap">
-            <Bar data={chartData} options={chartOptions} plugins={[rateLabelsPlugin]} />
-          </div>
+          {showChart && (
+            <div className="apl-chart-wrap">
+              <Bar data={chartData} options={chartOptions} />
+            </div>
+          )}
 
           {/* ── 일자 / 종목 탭 ── */}
+          {showList && (
           <div className="tab-bar apl-tab-bar">
             {TABS.map((t) => (
               <button
@@ -311,9 +291,10 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear }:
               </button>
             ))}
           </div>
+          )}
 
           {/* ── 내역 리스트 ── */}
-          {!hasSells ? (
+          {showList && (!hasSells ? (
             <div className="panel-empty">매도 내역이 없습니다.</div>
           ) : (
             <>
@@ -454,7 +435,7 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear }:
                 </div>
               </div>
             </>
-          )}
+          ))}
         </>
       )}
     </div>

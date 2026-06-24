@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
@@ -40,6 +40,13 @@ export default function Dashboard() {
   const realizedPL = calcRealizedPL(filteredEntries);
 
   const plPanelRef = useRef<HTMLDivElement>(null);
+
+  const plChartYears = useMemo(() =>
+    Array.from(new Set(marketEntries.filter((e) => e.type === 'sell').map((e) => e.date?.slice(0, 4)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
+    [marketEntries]
+  );
+  const [plYear, setPlYear] = useState<string | undefined>(undefined);
+  const resolvedPlYear = plYear ?? plChartYears[0];
 
   function handleMarketChange(m: Market) {
     switchMarket(m);
@@ -151,7 +158,17 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <PrincipalPLLineChart key={selectedYear} entries={filteredEntries} market={currentMarket} isDark={isDark} />
+            <div className="pl-top-row">
+              <RealizedPLChart
+                entries={marketEntries}
+                market={currentMarket}
+                isDark={isDark}
+                year={selectedYear === '전체' ? undefined : selectedYear}
+                view="chart"
+                onYearChange={setPlYear}
+              />
+              <PrincipalPLLineChart key={selectedYear} entries={filteredEntries} market={currentMarket} isDark={isDark} />
+            </div>
 
             <div className="pl-charts-row" ref={plPanelRef}>
               <PLPeriodTable entries={marketEntries} market={currentMarket} />
@@ -159,7 +176,8 @@ export default function Dashboard() {
                 entries={marketEntries}
                 market={currentMarket}
                 isDark={isDark}
-                year={selectedYear === '전체' ? undefined : selectedYear}
+                year={selectedYear === '전체' ? resolvedPlYear : selectedYear}
+                view="list"
               />
             </div>
 
