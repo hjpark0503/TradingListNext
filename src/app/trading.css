@@ -1240,6 +1240,8 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .main-layout,
   .main-layout--form-hidden { grid-template-columns:1fr; }
   .main-layout--form-hidden .dashboard-area { width:100%; }
+  /* 거래 직접 입력 폼: 모바일에선 1단으로 쌓아 폼을 위, 카드/테이블을 아래로 */
+  .trades-layout--with-form { grid-template-columns:1fr; max-width:1100px; }
   .form-aside { position: static; }
   .summary-grid-spacer { display:none; }
   .cards { grid-template-columns:repeat(2,1fr); gap:10px; }
@@ -1269,6 +1271,9 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .card   { padding:16px 14px; border-radius:var(--r-lg); }
   .card .value { font-size:1.1rem; }
   .card .label { font-size:.72rem; }
+  /* 좁은 카드에서 수익률이 잘리지 않도록 줄바꿈 */
+  .card-pl .value { white-space:normal; }
+  .card-pl .pl-rate-inline { display:block; margin-left:0; margin-top:2px; font-size:.82rem; }
   /* 차트 */
   .chart-wrap--tall { height:180px; }
   /* 탭 & 테이블 */
@@ -1291,6 +1296,18 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .rpl-footer { padding:12px 16px; gap:12px; }
   .rpl-footer__stats { margin-left: 0; }
   .rpl-parent__pl-wrap { flex-wrap:wrap; justify-content:flex-end; gap:2px; }
+}
+
+/* 초소형 화면(폴드/구형 폰): 헤더 컨트롤이 잘리지 않도록 압축 */
+@media (max-width:380px) {
+  .header-left { min-width:0; flex:0 1 auto; }
+  .header h1 { font-size:.72rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .header-center { flex:0 1 auto; }
+  .header-market .seg-ctrl { height:32px; }
+  .header-market .seg-btn  { font-size:.66rem; padding:0 7px; }
+  .header-actions { gap:2px; }
+  .btn-secondary { padding:0 7px; }
+  .header-actions .btn-dark-toggle { width:32px; height:32px; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
