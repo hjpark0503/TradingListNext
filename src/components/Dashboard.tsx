@@ -10,6 +10,7 @@ import { fmtUsd, fmtKrw } from '@/lib/utils';
 import { calcRealizedPL } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { RealizedPLChart } from './RealizedPLChart';
+import { MonthlyDividendChart } from './MonthlyDividendChart';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
 import { NoticeTicker } from './NoticeTicker';
 import { PLPeriodTable } from './PLPeriodTable';
@@ -158,6 +159,9 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* 투자 성과 추이 — 전체 너비로 상단 배치 */}
+            <PrincipalPLLineChart key={`${currentMarket}-${selectedYear}`} entries={filteredEntries} market={currentMarket} isDark={isDark} />
+
             <div className="pl-top-row">
               <RealizedPLChart
                 key={`chart-${currentMarket}-${selectedYear}`}
@@ -168,7 +172,13 @@ export default function Dashboard() {
                 view="chart"
                 onYearChange={setPlYear}
               />
-              <PrincipalPLLineChart key={`${currentMarket}-${selectedYear}`} entries={filteredEntries} market={currentMarket} isDark={isDark} />
+              <MonthlyDividendChart
+                key={`div-${currentMarket}-${selectedYear}`}
+                entries={marketEntries}
+                market={currentMarket}
+                isDark={isDark}
+                year={selectedYear === '전체' ? undefined : selectedYear}
+              />
             </div>
 
             <div className="pl-charts-row" ref={plPanelRef}>
