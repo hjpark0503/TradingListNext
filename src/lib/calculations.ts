@@ -19,6 +19,65 @@ export interface CapGainSummary {
   hasIncompleteData: boolean;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// 매도별 실현손익 (시간순 이동평균)
+//
+// 종목마다 매수/매도를 날짜순(같은 날짜는 매수 먼저)으로 처리하며 보유 수량·원가를
+// 누적한다. 각 매도는 "그 시점까지의 평균단가"만으로 손익을 계산하므로, 미래의 매수가
+// 과거 매도의 원가에 섞이지 않는다. 모든 집계 함수가 이 결과를 공유한다.
+// ─────────────────────────────────────────────────────────────────────────
+export interface SellPL {
+  pl: number;        // 실현손익
+  buyCost: number;   // 소모된 원가 = 매도시점 평균단가 × 수량
+  avgCost: number;   // 매도시점 평균단가(주당)
+  hasBuyData: boolean;
+}
+
+function computeSellPLMap(entries: Entry[]): Map<Entry, SellPL> {
+  const map = new Map<Entry, SellPL>();
+
+  const groups: Record<string, Entry[]> = {};
+  for (const e of entries) {
+    if ((e.type === 'buy' || e.type === 'sell') && e.qty > 0) {
+      const key = e.stock.trim().toUpperCase();
+      (groups[key] ||= []).push(e);
+    }
+  }
+
+  for (const key in groups) {
+    const txns = groups[key].slice().sort((a, b) => {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      // 같은 날짜에서는 매수를 먼저 반영
+      return (a.type === 'buy' ? 0 : 1) - (b.type === 'buy' ? 0 : 1);
+    });
+
+    let qty = 0;   // 보유 수량
+    let cost = 0;  // 보유 원가 누계
+    for (const t of txns) {
+      if (t.type === 'buy') {
+        qty += t.qty;
+        cost += t.settlement;
+      } else {
+        if (qty > 0) {
+          const avg = cost / qty;
+          const buyCost = avg * t.qty;
+          map.set(t, { pl: t.settlement - buyCost, buyCost, avgCost: avg, hasBuyData: true });
+          // 이동평균법: 평균단가는 유지한 채 보유분만 차감
+          const consume = Math.min(t.qty, qty);
+          cost -= avg * consume;
+          qty -= consume;
+          if (qty < 1e-9) { qty = 0; cost = 0; }
+        } else {
+          // 매수 기록이 없는(또는 시점상 보유 0인) 매도
+          map.set(t, { pl: 0, buyCost: 0, avgCost: 0, hasBuyData: false });
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
 export function calcCapitalGains(
   entries: Entry[],
   year: number,
@@ -26,46 +85,32 @@ export function calcCapitalGains(
 ): CapGainSummary {
   const yearStr = String(year);
   const overseasEntries = entries.filter((e) => e.market === 'overseas');
-
-  const allBuys = overseasEntries.filter((e) => e.type === 'buy' && e.qty > 0);
   const yearSells = overseasEntries.filter(
-    (e) => e.type === 'sell' && e.date.startsWith(yearStr)
+    (e) => e.type === 'sell' && e.qty > 0 && e.date.startsWith(yearStr)
   );
 
   if (yearSells.length === 0) {
     return { rows: [], totalPlKrw: 0, deductionKrw: 2_500_000, taxableKrw: 0, estimatedTaxKrw: 0, hasIncompleteData: false };
   }
 
-  const costAccum: Record<string, { totalCost: number; totalQty: number }> = {};
-  for (const b of allBuys) {
-    const key = b.stock.trim().toUpperCase();
-    if (!costAccum[key]) costAccum[key] = { totalCost: 0, totalQty: 0 };
-    costAccum[key].totalCost += b.settlement;
-    costAccum[key].totalQty += b.qty;
-  }
-  const avgCostMap: Record<string, number> = {};
-  for (const key in costAccum) {
-    if (costAccum[key].totalQty > 0)
-      avgCostMap[key] = costAccum[key].totalCost / costAccum[key].totalQty;
-  }
+  const plMap = computeSellPLMap(overseasEntries);
 
-  const sellAccum: Record<string, { qty: number; proceeds: number; label: string }> = {};
+  const acc: Record<string, { label: string; qty: number; proceeds: number; buyCost: number; pl: number; hasBuyData: boolean }> = {};
   for (const s of yearSells) {
+    const info = plMap.get(s);
     const key = s.stock.trim().toUpperCase();
-    if (!sellAccum[key]) sellAccum[key] = { qty: 0, proceeds: 0, label: s.stock.trim() };
-    sellAccum[key].qty += s.qty;
-    sellAccum[key].proceeds += s.settlement;
+    if (!acc[key]) acc[key] = { label: s.stock.trim(), qty: 0, proceeds: 0, buyCost: 0, pl: 0, hasBuyData: true };
+    acc[key].qty += s.qty;
+    acc[key].proceeds += s.settlement;
+    if (info?.hasBuyData) { acc[key].buyCost += info.buyCost; acc[key].pl += info.pl; }
+    else acc[key].hasBuyData = false;
   }
 
-  const rows: CapGainRow[] = Object.entries(sellAccum).map(([key, { qty, proceeds, label }]) => {
-    const avgCost = avgCostMap[key];
-    if (avgCost !== undefined) {
-      const buyCostUsd = avgCost * qty;
-      const plUsd = proceeds - buyCostUsd;
-      return { stock: label, sellQty: qty, sellProceedsUsd: proceeds, buyCostUsd, plUsd, plKrw: plUsd * exchangeRate, hasBuyData: true };
-    }
-    return { stock: label, sellQty: qty, sellProceedsUsd: proceeds, buyCostUsd: null, plUsd: null, plKrw: null, hasBuyData: false };
-  });
+  const rows: CapGainRow[] = Object.values(acc).map((a) =>
+    a.hasBuyData
+      ? { stock: a.label, sellQty: a.qty, sellProceedsUsd: a.proceeds, buyCostUsd: a.buyCost, plUsd: a.pl, plKrw: a.pl * exchangeRate, hasBuyData: true }
+      : { stock: a.label, sellQty: a.qty, sellProceedsUsd: a.proceeds, buyCostUsd: null, plUsd: null, plKrw: null, hasBuyData: false }
+  );
 
   const hasIncompleteData = rows.some((r) => !r.hasBuyData);
   const totalPlKrw = rows
@@ -93,43 +138,35 @@ export interface RealizedPLResult {
   rows: RealizedPLRow[];
 }
 
-export function calcRealizedPL(entries: Entry[]): RealizedPLResult {
-  const buys  = entries.filter((e) => e.type === 'buy'  && e.qty > 0);
-  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0);
-
+export function calcRealizedPL(entries: Entry[], sellYear?: string): RealizedPLResult {
+  // 원가(이동평균)는 항상 전체 이력으로 계산하고, 집계 대상 매도만 연도로 거른다.
+  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0 && (!sellYear || e.date.startsWith(sellYear)));
   if (sells.length === 0) return { totalPL: 0, hasIncompleteData: false, rows: [] };
 
-  const costAccum: Record<string, { totalCost: number; totalQty: number }> = {};
-  for (const b of buys) {
-    const key = b.stock.trim().toUpperCase();
-    if (!costAccum[key]) costAccum[key] = { totalCost: 0, totalQty: 0 };
-    costAccum[key].totalCost += b.settlement;
-    costAccum[key].totalQty  += b.qty;
-  }
+  const plMap = computeSellPLMap(entries);
 
-  const sellAccum: Record<string, { qty: number; proceeds: number; label: string }> = {};
+  const acc: Record<string, { label: string; qty: number; proceeds: number; buyCost: number; pl: number; hasBuyData: boolean }> = {};
   for (const s of sells) {
+    const info = plMap.get(s);
     const key = s.stock.trim().toUpperCase();
-    if (!sellAccum[key]) sellAccum[key] = { qty: 0, proceeds: 0, label: s.stock.trim() };
-    sellAccum[key].qty      += s.qty;
-    sellAccum[key].proceeds += s.settlement;
+    if (!acc[key]) acc[key] = { label: s.stock.trim(), qty: 0, proceeds: 0, buyCost: 0, pl: 0, hasBuyData: true };
+    acc[key].qty += s.qty;
+    acc[key].proceeds += s.settlement;
+    if (info?.hasBuyData) { acc[key].buyCost += info.buyCost; acc[key].pl += info.pl; }
+    else acc[key].hasBuyData = false;
   }
 
   let totalPL = 0;
   let hasIncompleteData = false;
   const rows: RealizedPLRow[] = [];
-
-  for (const [key, { qty, proceeds, label }] of Object.entries(sellAccum)) {
-    const accum = costAccum[key];
-    if (accum && accum.totalQty > 0) {
-      const avgCostPerUnit = accum.totalCost / accum.totalQty;
-      const buyCost = avgCostPerUnit * qty;
-      const pl = proceeds - buyCost;
-      totalPL += pl;
-      rows.push({ stock: label, avgCostPerUnit, sellQty: qty, sellProceeds: proceeds, buyCost, pl, hasBuyData: true });
+  for (const key in acc) {
+    const a = acc[key];
+    if (a.hasBuyData) {
+      totalPL += a.pl;
+      rows.push({ stock: a.label, avgCostPerUnit: a.qty > 0 ? a.buyCost / a.qty : 0, sellQty: a.qty, sellProceeds: a.proceeds, buyCost: a.buyCost, pl: a.pl, hasBuyData: true });
     } else {
       hasIncompleteData = true;
-      rows.push({ stock: label, avgCostPerUnit: 0, sellQty: qty, sellProceeds: proceeds, buyCost: 0, pl: 0, hasBuyData: false });
+      rows.push({ stock: a.label, avgCostPerUnit: 0, sellQty: a.qty, sellProceeds: a.proceeds, buyCost: 0, pl: 0, hasBuyData: false });
     }
   }
 
@@ -167,36 +204,23 @@ export interface PLByStockRow {
   details: PLByStockDetail[];
 }
 
-function buildAvgCostMap(entries: Entry[]): Record<string, number> {
-  const buys = entries.filter((e) => e.type === 'buy' && e.qty > 0);
-  const accum: Record<string, { totalCost: number; totalQty: number }> = {};
-  for (const b of buys) {
-    const key = b.stock.trim().toUpperCase();
-    if (!accum[key]) accum[key] = { totalCost: 0, totalQty: 0 };
-    accum[key].totalCost += b.settlement;
-    accum[key].totalQty += b.qty;
-  }
-  const map: Record<string, number> = {};
-  for (const key in accum) {
-    if (accum[key].totalQty > 0) map[key] = accum[key].totalCost / accum[key].totalQty;
-  }
-  return map;
-}
-
-export function calcPLByDate(entries: Entry[]): PLByDateRow[] {
-  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0);
+export function calcPLByDate(entries: Entry[], sellYear?: string): PLByDateRow[] {
+  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0 && (!sellYear || e.date.startsWith(sellYear)));
   if (sells.length === 0) return [];
 
-  const avgCostMap = buildAvgCostMap(entries);
+  const plMap = computeSellPLMap(entries);
 
-  const dateMap: Record<string, Record<string, { qty: number; proceeds: number; label: string }>> = {};
+  const dateMap: Record<string, Record<string, { qty: number; proceeds: number; pl: number; buyCost: number; hasBuyData: boolean; label: string }>> = {};
   for (const s of sells) {
-    const date = s.date;
+    const info = plMap.get(s);
     const key = s.stock.trim().toUpperCase();
-    if (!dateMap[date]) dateMap[date] = {};
-    if (!dateMap[date][key]) dateMap[date][key] = { qty: 0, proceeds: 0, label: s.stock.trim() };
-    dateMap[date][key].qty += s.qty;
-    dateMap[date][key].proceeds += s.settlement;
+    if (!dateMap[s.date]) dateMap[s.date] = {};
+    if (!dateMap[s.date][key]) dateMap[s.date][key] = { qty: 0, proceeds: 0, pl: 0, buyCost: 0, hasBuyData: true, label: s.stock.trim() };
+    const g = dateMap[s.date][key];
+    g.qty += s.qty;
+    g.proceeds += s.settlement;
+    if (info?.hasBuyData) { g.pl += info.pl; g.buyCost += info.buyCost; }
+    else g.hasBuyData = false;
   }
 
   return Object.entries(dateMap)
@@ -206,16 +230,14 @@ export function calcPLByDate(entries: Entry[]): PLByDateRow[] {
       let totalPL = 0;
       let hasIncompleteData = false;
 
-      for (const [key, { qty, proceeds, label }] of Object.entries(stockMap)) {
-        const avgCost = avgCostMap[key];
-        if (avgCost !== undefined) {
-          const buyCost = avgCost * qty;
-          const pl = proceeds - buyCost;
-          totalPL += pl;
-          details.push({ stock: label, qty, proceeds, buyCost, pl, hasBuyData: true });
+      for (const key in stockMap) {
+        const g = stockMap[key];
+        if (g.hasBuyData) {
+          totalPL += g.pl;
+          details.push({ stock: g.label, qty: g.qty, proceeds: g.proceeds, buyCost: g.buyCost, pl: g.pl, hasBuyData: true });
         } else {
           hasIncompleteData = true;
-          details.push({ stock: label, qty, proceeds, buyCost: null, pl: null, hasBuyData: false });
+          details.push({ stock: g.label, qty: g.qty, proceeds: g.proceeds, buyCost: null, pl: null, hasBuyData: false });
         }
       }
 
@@ -223,38 +245,41 @@ export function calcPLByDate(entries: Entry[]): PLByDateRow[] {
     });
 }
 
-export function calcPLByStock(entries: Entry[]): PLByStockRow[] {
-  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0);
+export function calcPLByStock(entries: Entry[], sellYear?: string): PLByStockRow[] {
+  const sells = entries.filter((e) => e.type === 'sell' && e.qty > 0 && (!sellYear || e.date.startsWith(sellYear)));
   if (sells.length === 0) return [];
 
-  const avgCostMap = buildAvgCostMap(entries);
+  const plMap = computeSellPLMap(entries);
 
-  const stockMap: Record<string, { label: string; dateMap: Record<string, { qty: number; proceeds: number }> }> = {};
+  const stockMap: Record<string, { label: string; dateMap: Record<string, { qty: number; proceeds: number; pl: number; buyCost: number; hasBuyData: boolean }> }> = {};
   for (const s of sells) {
+    const info = plMap.get(s);
     const key = s.stock.trim().toUpperCase();
     if (!stockMap[key]) stockMap[key] = { label: s.stock.trim(), dateMap: {} };
-    if (!stockMap[key].dateMap[s.date]) stockMap[key].dateMap[s.date] = { qty: 0, proceeds: 0 };
-    stockMap[key].dateMap[s.date].qty += s.qty;
-    stockMap[key].dateMap[s.date].proceeds += s.settlement;
+    if (!stockMap[key].dateMap[s.date]) stockMap[key].dateMap[s.date] = { qty: 0, proceeds: 0, pl: 0, buyCost: 0, hasBuyData: true };
+    const g = stockMap[key].dateMap[s.date];
+    g.qty += s.qty;
+    g.proceeds += s.settlement;
+    if (info?.hasBuyData) { g.pl += info.pl; g.buyCost += info.buyCost; }
+    else g.hasBuyData = false;
   }
 
-  const rows: PLByStockRow[] = Object.entries(stockMap).map(([key, { label, dateMap }]) => {
-    const avgCost = avgCostMap[key];
+  const rows: PLByStockRow[] = Object.values(stockMap).map(({ label, dateMap }) => {
     let totalPL = 0;
+    let hasIncompleteData = false;
 
     const details: PLByStockDetail[] = Object.entries(dateMap)
       .sort(([a], [b]) => b.localeCompare(a))
-      .map(([date, { qty, proceeds }]) => {
-        if (avgCost !== undefined) {
-          const buyCost = avgCost * qty;
-          const pl = proceeds - buyCost;
-          totalPL += pl;
-          return { date, qty, proceeds, buyCost, pl };
+      .map(([date, g]) => {
+        if (g.hasBuyData) {
+          totalPL += g.pl;
+          return { date, qty: g.qty, proceeds: g.proceeds, buyCost: g.buyCost, pl: g.pl };
         }
-        return { date, qty, proceeds, buyCost: null, pl: null };
+        hasIncompleteData = true;
+        return { date, qty: g.qty, proceeds: g.proceeds, buyCost: null, pl: null };
       });
 
-    return { stock: label, totalPL, hasIncompleteData: avgCost === undefined, details };
+    return { stock: label, totalPL, hasIncompleteData, details };
   });
 
   return rows.sort((a, b) => b.totalPL - a.totalPL);
@@ -376,7 +401,7 @@ export interface PrincipalPLPoint {
 }
 
 export function calcPrincipalAndPLOverTime(entries: Entry[]): PrincipalPLPoint[] {
-  const avgCostMap = buildAvgCostMap(entries);
+  const plMap = computeSellPLMap(entries);
 
   const eventDates = new Set<string>();
   for (const e of entries) {
@@ -397,8 +422,8 @@ export function calcPrincipalAndPLOverTime(entries: Entry[]): PrincipalPLPoint[]
       if (e.type === 'deposit') cumulativePrincipal += e.settlement;
       else if (e.type === 'withdraw') cumulativePrincipal -= e.settlement;
       else if (e.type === 'sell' && e.qty > 0) {
-        const avgCost = avgCostMap[e.stock.trim().toUpperCase()];
-        if (avgCost !== undefined) cumulativePL += e.settlement - avgCost * e.qty;
+        const info = plMap.get(e);
+        if (info?.hasBuyData) cumulativePL += info.pl;
       }
     }
     result.push({ date, principal: cumulativePrincipal, cumulativePL });

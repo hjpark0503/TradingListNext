@@ -38,7 +38,8 @@ export default function Dashboard() {
     ? marketEntries
     : marketEntries.filter((e) => e.date?.startsWith(selectedYear));
 
-  const realizedPL = calcRealizedPL(filteredEntries);
+  // 원가는 전체 이력으로 계산하고 집계만 선택 연도로 거름 (월별 차트·기간별 표와 일치)
+  const realizedPL = calcRealizedPL(marketEntries, selectedYear === '전체' ? undefined : selectedYear);
 
   const plPanelRef = useRef<HTMLDivElement>(null);
 

@@ -96,15 +96,10 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
   const [dateSort,   setDateSort]   = useState<{ col: 'date' | 'pl'; dir: Dir }>({ col: 'date', dir: 'desc' });
   const [stockSort,  setStockSort]  = useState<{ col: 'stock' | 'pl'; dir: Dir }>({ col: 'pl', dir: 'desc' });
 
-  // 선택 연도의 매도만 포함 (매수는 평균단가 계산을 위해 전체 유지)
-  const yearEntries = useMemo(
-    () => entries.filter((e) => e.type !== 'sell' || e.date.startsWith(currentYear)),
-    [entries, currentYear]
-  );
-
-  const byDate  = useMemo(() => calcPLByDate(yearEntries),   [yearEntries]);
-  const byStock = useMemo(() => calcPLByStock(yearEntries),  [yearEntries]);
-  const total   = useMemo(() => calcRealizedPL(yearEntries), [yearEntries]);
+  // 원가(이동평균)는 전체 이력으로 계산하고, 표시는 선택 연도 매도만 거른다.
+  const byDate  = useMemo(() => calcPLByDate(entries, currentYear),   [entries, currentYear]);
+  const byStock = useMemo(() => calcPLByStock(entries, currentYear),  [entries, currentYear]);
+  const total   = useMemo(() => calcRealizedPL(entries, currentYear), [entries, currentYear]);
 
   const winningStocks       = byStock.filter((r) => !r.hasIncompleteData && r.totalPL > 0).length;
   const totalStocksWithData = byStock.filter((r) => !r.hasIncompleteData).length;

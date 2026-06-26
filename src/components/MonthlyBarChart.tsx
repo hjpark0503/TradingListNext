@@ -213,7 +213,8 @@ export function MonthlyBarChart({
 
   function fmtBarLabel(n: number) {
     const abs  = Math.abs(n);
-    const sign = n < 0 ? '−' : '+';
+    // income 모드(배당)는 항상 양수이므로 + 기호 생략
+    const sign = n < 0 ? '−' : (colorMode === 'income' ? '' : '+');
     if (market === 'domestic') {
       if (abs >= 100_000_000) return `${sign}₩${(abs / 100_000_000).toFixed(1)}억`;
       if (abs >= 10_000)      return `${sign}₩${(abs / 10_000).toFixed(0)}만`;
@@ -257,12 +258,10 @@ export function MonthlyBarChart({
       const GAP   = 6;
       const surfaceBg = isDark ? '#252836' : '#fff';
 
+      // 현재 연도만 값 박스 라벨 표시 (직전 연도 회색 막대는 라벨 생략)
       const specs: { dsIdx: number; data: MonthData[]; colorFor: (v: number) => string }[] = [
         { dsIdx: 0, data: curData, colorFor: barColorFor },
       ];
-      if (hasCompare && cmpData) {
-        specs.push({ dsIdx: 1, data: cmpData, colorFor: () => COMPARE_COLOR });
-      }
 
       ctx.save();
       ctx.font = `700 ${fSize}px Pretendard, sans-serif`;
