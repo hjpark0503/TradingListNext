@@ -75,14 +75,6 @@ export function MonthlyBarChart({
 }: Props) {
   const hasCompare = !!compareData && compareData.some((m) => m.hasData);
 
-  // ── 이상치 스케일 보정 ──
-  const vals = monthData.filter((m) => m.hasData).map((m) => m.pl);
-  if (hasCompare && compareData) vals.push(...compareData.filter((m) => m.hasData).map((m) => m.pl));
-  const cap = robustCap(vals.filter((v) => v !== 0));
-  const hasNeg = monthData.some((m) => m.hasData && m.pl < 0)
-    || (!!compareData && compareData.some((m) => m.hasData && m.pl < 0));
-  const clampV = (v: number) => (cap == null ? v : Math.max(-cap, Math.min(cap, v)));
-
   // ── 차트 색상 ──
   const PROFIT_COLOR = '#F04452';
   const LOSS_COLOR   = isDark ? '#4D94FF' : '#246CF9';
@@ -97,9 +89,32 @@ export function MonthlyBarChart({
   const activeIdx = monthData
     .map((_, i) => i)
     .filter((i) => monthData[i].hasData || compareData?.[i]?.hasData);
-  const curData = activeIdx.map((i) => monthData[i]);
-  const cmpData = compareData ? activeIdx.map((i) => compareData[i]) : null;
-  const labels  = activeIdx.map((i) => MONTH_LABELS[i]);
+  const curMonths = activeIdx.map((i) => monthData[i]);
+  const cmpMonths = compareData ? activeIdx.map((i) => compareData[i]) : null;
+
+  // ── x축 맨 오른쪽에 연 누적 막대 추가 ──
+  const sumPL = (arr: MonthData[]) => arr.reduce((s, m) => s + (m.hasData ? m.pl : 0), 0);
+  const cumCur: MonthData = { pl: sumPL(curMonths), buyCost: 0, hasData: curMonths.some((m) => m.hasData) };
+  const cumCmp: MonthData | null = cmpMonths
+    ? { pl: sumPL(cmpMonths), buyCost: 0, hasData: cmpMonths.some((m) => m.hasData) }
+    : null;
+
+  const curData = [...curMonths, cumCur];
+  const cmpData = cmpMonths ? [...cmpMonths, cumCmp!] : null;
+  const labels  = [...activeIdx.map((i) => MONTH_LABELS[i]), '누적'];
+
+  // ── 스케일 보정 ──
+  // cap은 "월 막대"만으로 산출(누적은 합이라 크므로 이상치 판정에서 제외).
+  // 누적 막대는 cap(없으면 월 최댓값)으로 클램프해 월별 막대 가독성을 유지하고,
+  // 넘치면 절단 표시 + 라벨에 실제 값을 보여준다.
+  const monthlyVals = curMonths.filter((m) => m.hasData).map((m) => m.pl)
+    .concat(cmpMonths ? cmpMonths.filter((m) => m.hasData).map((m) => m.pl) : []);
+  const cap = robustCap(monthlyVals.filter((v) => v !== 0));
+  const monthlyAbsMax = monthlyVals.reduce((mx, v) => Math.max(mx, Math.abs(v)), 0);
+  const clampMax = cap != null ? cap : (monthlyAbsMax > 0 ? monthlyAbsMax : null);
+  const hasNeg = curData.some((m) => m.hasData && m.pl < 0)
+    || (!!cmpData && cmpData.some((m) => m.hasData && m.pl < 0));
+  const clampV = (v: number) => (clampMax == null ? v : Math.max(-clampMax, Math.min(clampMax, v)));
 
   const chartData = {
     labels,
@@ -186,17 +201,17 @@ export function MonthlyBarChart({
         border: { color: gridColor },
       },
       y: {
-        ...(cap != null ? { max: cap, min: hasNeg ? -cap : 0 } : {}),
+        ...(clampMax != null ? { max: clampMax, min: hasNeg ? -clampMax : 0 } : {}),
         afterBuildTicks(scale) {
           if (scale.ticks.length < 2) return;
           const step     = scale.ticks[1].value - scale.ticks[0].value;
           const firstVal = scale.ticks[0].value;
           const room = step * 0.5;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (scale as unknown as any).max = (cap != null ? cap : scale.ticks[scale.ticks.length - 1].value) + room;
-          if (firstVal < 0 || (cap != null && hasNeg)) {
+          (scale as unknown as any).max = (clampMax != null ? clampMax : scale.ticks[scale.ticks.length - 1].value) + room;
+          if (firstVal < 0 || (clampMax != null && hasNeg)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (scale as unknown as any).min = (cap != null ? -cap : firstVal) - room;
+            (scale as unknown as any).min = (clampMax != null ? -clampMax : firstVal) - room;
           }
         },
         ticks: {
@@ -245,6 +260,28 @@ export function MonthlyBarChart({
     },
   };
 
+  // ── 누적 막대 왼쪽 세로 점선 구분선 ──
+  const cumDividerPlugin: Plugin<'bar'> = {
+    id: 'cumDivider',
+    beforeDatasetsDraw(chart) {
+      const x = chart.scales.x;
+      const n = labels.length;
+      if (!x || n < 2) return;
+      const px = Math.round((x.getPixelForValue(n - 2) + x.getPixelForValue(n - 1)) / 2) + 0.5;
+      const { top, bottom } = chart.chartArea;
+      const { ctx } = chart;
+      ctx.save();
+      ctx.beginPath();
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = isDark ? 'rgba(168,179,193,0.45)' : 'rgba(120,130,145,0.4)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(px, top);
+      ctx.lineTo(px, bottom);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+
   // ── 막대 위/아래 값 박스 라벨 ──
   const barLabelPlugin: Plugin<'bar'> = {
     id: 'barPLLabel',
@@ -270,8 +307,8 @@ export function MonthlyBarChart({
 
       interface LabelItem {
         bx: number; by: number; bw: number;
-        barX: number; barY: number; barW: number;
-        color: string; label: string; up: boolean; clipped: boolean;
+        barX: number; barY: number;
+        color: string; label: string; up: boolean;
       }
       const items: LabelItem[] = [];
       for (const spec of specs) {
@@ -284,15 +321,14 @@ export function MonthlyBarChart({
           const up    = v >= 0;
           const label = fmtBarLabel(v);
           const bw    = ctx.measureText(label).width + padX * 2;
-          const bar   = el as unknown as { x: number; y: number; width: number };
+          const bar   = el as unknown as { x: number; y: number };
           let by = up ? bar.y - GAP - bh : bar.y + GAP;
           by = Math.max(chartArea.top + 2, Math.min(by, chartArea.bottom - bh - 2));
           let bx = bar.x - bw / 2;
           bx = Math.max(chartArea.left, Math.min(bx, chartArea.right - bw));
           items.push({
-            bx, by, bw, barX: bar.x, barY: bar.y, barW: bar.width ?? 20,
+            bx, by, bw, barX: bar.x, barY: bar.y,
             color: spec.colorFor(v), label, up,
-            clipped: cap != null && Math.abs(v) > cap + 0.5,
           });
         });
       }
@@ -319,30 +355,6 @@ export function MonthlyBarChart({
         ctx.lineTo(it.barX, it.up ? it.by + bh : it.by);
         ctx.stroke();
         ctx.setLineDash([]);
-
-        // cap으로 잘린 막대: 끝에 절단(break) 표시 — 물결 2줄(≈)
-        if (it.clipped) {
-          const halfW = Math.min(it.barW, 26) / 2;
-          const x0 = it.barX - halfW;
-          const width = halfW * 2;
-          const amp = 1.4;
-          const gap = 2.4;
-          const yMid = it.barY + (it.up ? 5 : -5);
-          ctx.fillStyle = surfaceBg;
-          ctx.fillRect(x0 - 1, yMid - gap - amp - 1, width + 2, (gap + amp + 1) * 2);
-          ctx.strokeStyle = it.color;
-          ctx.lineWidth = 1.3;
-          for (const baseY of [yMid - gap, yMid + gap]) {
-            ctx.beginPath();
-            const steps = 12;
-            for (let k = 0; k <= steps; k++) {
-              const px = x0 + (width * k) / steps;
-              const py = baseY + amp * Math.sin((k / steps) * Math.PI * 2);
-              if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-            }
-            ctx.stroke();
-          }
-        }
 
         ctx.fillStyle   = surfaceBg;
         ctx.strokeStyle = it.color;
@@ -381,7 +393,7 @@ export function MonthlyBarChart({
         <div className="panel-empty">{emptyText}</div>
       ) : (
         <div className="apl-chart-wrap">
-          <Bar data={chartData} options={chartOptions} plugins={[zeroLinePlugin, barLabelPlugin]} />
+          <Bar data={chartData} options={chartOptions} plugins={[zeroLinePlugin, cumDividerPlugin, barLabelPlugin]} />
         </div>
       )}
     </div>
