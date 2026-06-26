@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -18,8 +18,6 @@ import { calcPrincipalAndPLOverTime, type PrincipalPLPoint } from '@/lib/calcula
 import { fmtUsd, fmtKrw } from '@/lib/utils';
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler);
-
-type ViewMode = 'monthly' | 'daily';
 
 interface Props {
   entries: Entry[];
@@ -66,14 +64,8 @@ function aggregateMonthly(points: PrincipalPLPoint[]): PrincipalPLPoint[] {
 
 
 export function PrincipalPLLineChart({ entries, market, isDark = false }: Props) {
-  const [view, setView] = useState<ViewMode>('monthly');
-
-  const allPoints  = useMemo(() => calcPrincipalAndPLOverTime(entries), [entries]);
-  const basePoints = useMemo(
-    () => (view === 'monthly' ? aggregateMonthly(allPoints) : allPoints),
-    [view, allPoints]
-  );
-  const points = basePoints;
+  const allPoints = useMemo(() => calcPrincipalAndPLOverTime(entries), [entries]);
+  const points    = useMemo(() => aggregateMonthly(allPoints), [allPoints]);
 
   // Ref holds the latest label info so the stable plugin can always read fresh values
   const lastFmtRef = useRef<LastFmtRef>({
@@ -220,10 +212,8 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
     dark:           isDark,
   };
 
-  const labels = points.map((p) =>
-    view === 'monthly'
-      ? `${p.date.slice(2, 4)}.${parseInt(p.date.slice(5, 7))}`
-      : p.date.slice(5)
+  const labels = points.map(
+    (p) => `${p.date.slice(2, 4)}.${parseInt(p.date.slice(5, 7))}`
   );
 
   const chartData = {
@@ -332,30 +322,14 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
   return (
     <div className="rpl-panel">
       <div className="rpl-header pl-chart-header">
-        {/* 제목 + 레전드 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="rpl-title">투자 성과 추이</span>
-          <div className="pl-line-legend">
-            <span className="pl-line-dot" style={{ background: principalColor }} />
-            <span className="pl-line-label">원금</span>
-            <span className="pl-line-dot" style={{ background: plColor }} />
-            <span className="pl-line-label">누적 실현금액</span>
-          </div>
-        </div>
+        <span className="rpl-title">투자 성과 추이</span>
 
-        {/* 컨트롤: 일별/월별 */}
-        <div className="pl-chart-header__controls">
-          <div className="rpl-seg">
-            {(['monthly', 'daily'] as const).map((v) => (
-              <button
-                key={v}
-                className={`rpl-seg__btn${view === v ? ' active' : ''}`}
-                onClick={() => setView(v)}
-              >
-                {v === 'monthly' ? '월' : '일'}
-              </button>
-            ))}
-          </div>
+        {/* 레전드 (오른쪽 정렬) */}
+        <div className="pl-line-legend">
+          <span className="pl-line-dot" style={{ background: principalColor }} />
+          <span className="pl-line-label">원금</span>
+          <span className="pl-line-dot" style={{ background: plColor }} />
+          <span className="pl-line-label">누적 실현금액</span>
         </div>
       </div>
 
