@@ -2238,6 +2238,33 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   letter-spacing: -.01em;
 }
 
+.apl-year-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.apl-year-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -.01em;
+}
+
+.apl-year-legend__item--muted {
+  color: var(--text-muted);
+}
+
+.apl-year-legend__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
 .apl-chart-wrap {
   height: 260px;
   padding: 16px 16px 12px;

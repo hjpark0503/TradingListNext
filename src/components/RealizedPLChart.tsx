@@ -9,6 +9,7 @@ import {
   Tooltip,
   type TooltipItem,
   type ChartOptions,
+  type Plugin,
 } from 'chart.js';
 import type { Entry, Market } from '@/lib/types';
 import { calcPLByDate, calcPLByStock, calcRealizedPL } from '@/lib/calculations';
@@ -30,6 +31,23 @@ interface MonthData {
   pl: number;
   buyCost: number;
   hasData: boolean;
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number, r: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
 }
 
 function calcMonthlyData(entries: Entry[], year: string): MonthData[] {
@@ -90,10 +108,7 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
     [entries]
   );
 
-  const [selectedYear, setSelectedYear] = useState<string>(
-    () => years[0] ?? String(new Date().getFullYear())
-  );
-  const currentYear = externalYear ?? (years.includes(selectedYear) ? selectedYear : (years[0] ?? selectedYear));
+  const currentYear = externalYear ?? (years[0] ?? String(new Date().getFullYear()));
 
   const showChart = view === 'chart' || view === 'all';
   const showList  = view === 'list'  || view === 'all';
@@ -104,9 +119,18 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
 
   const monthData = useMemo(() => calcMonthlyData(entries, currentYear), [entries, currentYear]);
 
+  // ── '전체' 모드(특정 연도 미선택)에서는 직전년도 막대를 회색으로 함께 표시 ──
+  const compareYear = !externalYear && showChart ? String(Number(currentYear) - 1) : null;
+  const compareData = useMemo(
+    () => (compareYear ? calcMonthlyData(entries, compareYear) : null),
+    [entries, compareYear]
+  );
+  const hasCompare = !!compareData && compareData.some((m) => m.hasData);
+
   // ── 차트 색상 ──
   const PROFIT_COLOR = '#F04452';
   const LOSS_COLOR   = isDark ? '#4D94FF' : '#246CF9';
+  const COMPARE_COLOR = isDark ? '#8B95A1' : '#B0B8C1';
   const textColor    = isDark ? '#A8B3C1' : '#4E5968';
   const gridColor    = isDark ? 'rgba(42,47,62,0.8)' : 'rgba(229,232,235,0.8)';
 
@@ -114,16 +138,34 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
   const values   = monthData.map((m) => m.pl);
   const chartData = {
     labels: MONTH_LABELS,
-    datasets: [{
-      label: '실현손익',
-      data: values,
-      backgroundColor: values.map((v) => (v >= 0 ? PROFIT_COLOR : LOSS_COLOR)),
-      borderRadius: 4,
-      borderSkipped: false as const,
-      maxBarThickness: 40,
-      barPercentage: 0.7,
-      categoryPercentage: 0.75,
-    }],
+    datasets: [
+      // 현재 연도 (색상: 수익 빨강 / 손실 파랑) — 박스 라벨 플러그인이 dataset 0 기준
+      {
+        label: currentYear,
+        data: values,
+        backgroundColor: values.map((v) => (v >= 0 ? PROFIT_COLOR : LOSS_COLOR)),
+        borderRadius: 4,
+        borderSkipped: false as const,
+        maxBarThickness: 40,
+        barPercentage: 0.7,
+        categoryPercentage: 0.75,
+        order: 1,
+      },
+      // 직전 연도 (회색) — '전체' 모드에서만
+      ...(hasCompare
+        ? [{
+            label: compareYear as string,
+            data: compareData!.map((m) => m.pl),
+            backgroundColor: COMPARE_COLOR,
+            borderRadius: 4,
+            borderSkipped: false as const,
+            maxBarThickness: 40,
+            barPercentage: 0.7,
+            categoryPercentage: 0.75,
+            order: 2,
+          }]
+        : []),
+    ],
   };
 
   function fmtAxis(n: number) {
@@ -151,7 +193,10 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
     plugins: {
       legend: { display: false },
       tooltip: {
-        callbacks: { label: (item: TooltipItem<'bar'>) => ' ' + fmtTooltip(item.raw as number) },
+        callbacks: {
+          label: (item: TooltipItem<'bar'>) =>
+            ` ${item.dataset.label}: ${fmtTooltip(item.raw as number)}`,
+        },
         backgroundColor: isDark ? '#252836' : '#fff',
         titleColor:      isDark ? '#F0F4F8' : '#191F28',
         bodyColor:       isDark ? '#A8B3C1' : '#4E5968',
@@ -159,7 +204,7 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
         borderWidth: 1, padding: 10, cornerRadius: 8,
       },
     },
-    layout: { padding: { left: 4, right: 4 } },
+    layout: { padding: { left: 4, right: 4, top: 18 } },
     scales: {
       x: {
         ticks: { color: textColor, font: { size: 11, family: 'Pretendard, sans-serif' } },
@@ -167,6 +212,22 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
         border: { color: gridColor },
       },
       y: {
+        afterBuildTicks(scale) {
+          if (scale.ticks.length < 2) return;
+          const step     = scale.ticks[1].value - scale.ticks[0].value;
+          const firstVal = scale.ticks[0].value;
+          const lastVal  = scale.ticks[scale.ticks.length - 1].value;
+          // 위쪽 한 단계 확장 (양수 막대 박스 여유)
+          scale.ticks.push({ value: lastVal + step, label: '' });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (scale as unknown as any).max = lastVal + step;
+          // 음수 값이 있으면 아래쪽도 한 단계 확장 (음수 막대 박스 여유)
+          if (firstVal < 0) {
+            scale.ticks.unshift({ value: firstVal - step, label: '' });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (scale as unknown as any).min = firstVal - step;
+          }
+        },
         ticks: {
           color: textColor,
           font: { size: 11, family: 'Pretendard, sans-serif' },
@@ -176,6 +237,90 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
         grid: { color: gridColor },
         border: { color: 'transparent' },
       },
+    },
+  };
+
+  // ── 막대 위 실현손익 박스 라벨 (투자 성과 추이 박스 스타일 참고) ──
+  function fmtBarLabel(n: number) {
+    const abs  = Math.abs(n);
+    const sign = n < 0 ? '−' : '+';
+    if (market === 'domestic') {
+      if (abs >= 100_000_000) return `${sign}₩${(abs / 100_000_000).toFixed(1)}억`;
+      if (abs >= 10_000)      return `${sign}₩${(abs / 10_000).toFixed(0)}만`;
+      return `${sign}₩${abs.toFixed(0)}`;
+    }
+    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(1)}K`;
+    return `${sign}$${abs.toFixed(0)}`;
+  }
+
+  const barLabelPlugin: Plugin<'bar'> = {
+    id: 'barPLLabel',
+    afterDatasetsDraw(chart) {
+      const { ctx, chartArea } = chart;
+
+      const fSize = 10;
+      const padX  = 6;
+      const padY  = 3;
+      const bh    = fSize + padY * 2;
+      const GAP   = 6;
+
+      // 데이터셋별 라벨 스펙: 0=현재 연도(수익/손실 색), 1=직전 연도(회색)
+      const specs: { dsIdx: number; data: MonthData[]; colorFor: (v: number) => string }[] = [
+        { dsIdx: 0, data: monthData, colorFor: (v) => (v >= 0 ? PROFIT_COLOR : LOSS_COLOR) },
+      ];
+      if (hasCompare && compareData) {
+        specs.push({ dsIdx: 1, data: compareData, colorFor: () => COMPARE_COLOR });
+      }
+
+      ctx.save();
+      ctx.font = `700 ${fSize}px Pretendard, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (const spec of specs) {
+        const meta = chart.getDatasetMeta(spec.dsIdx);
+        if (!meta?.data?.length) continue;
+
+        meta.data.forEach((el, i) => {
+          const m = spec.data[i];
+          if (!m || !m.hasData || m.pl === 0) return;
+
+          const v     = m.pl;
+          const color = spec.colorFor(v);
+          const label = fmtBarLabel(v);
+          const bw    = ctx.measureText(label).width + padX * 2;
+          const bar   = el as unknown as { x: number; y: number };
+
+          // 양수: 막대 위 / 음수: 막대 아래
+          let by = v >= 0 ? bar.y - GAP - bh : bar.y + GAP;
+          by = Math.max(chartArea.top + 2, Math.min(by, chartArea.bottom - bh - 2));
+          let bx = bar.x - bw / 2;
+          bx = Math.max(chartArea.left, Math.min(bx, chartArea.right - bw));
+
+          // 막대와 박스를 잇는 점선 커넥터
+          ctx.beginPath();
+          ctx.setLineDash([2, 2]);
+          ctx.strokeStyle = color;
+          ctx.lineWidth   = 1;
+          ctx.moveTo(bar.x, bar.y);
+          ctx.lineTo(bar.x, v >= 0 ? by + bh : by);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.fillStyle   = isDark ? '#252836' : '#fff';
+          ctx.strokeStyle = color;
+          ctx.lineWidth   = 1.2;
+          roundRect(ctx, bx, by, bw, bh, 4);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = color;
+          ctx.fillText(label, bx + bw / 2, by + bh / 2 + 0.5);
+        });
+      }
+
+      ctx.restore();
     },
   };
 
@@ -262,17 +407,18 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
             ))}
           </div>
         )}
-        {!externalYear && showChart && (
-          <div className="apl-year-tabs">
-            {years.map((y) => (
-              <button
-                key={y}
-                className={`apl-year-btn${currentYear === y ? ' active' : ''}`}
-                onClick={() => setSelectedYear(y)}
-              >
-                {y}
-              </button>
-            ))}
+        {showChart && (
+          <div className="apl-year-legend">
+            <span className="apl-year-legend__item">
+              <span className="apl-year-legend__dot" style={{ background: PROFIT_COLOR }} />
+              {currentYear}
+            </span>
+            {hasCompare && (
+              <span className="apl-year-legend__item apl-year-legend__item--muted">
+                <span className="apl-year-legend__dot" style={{ background: COMPARE_COLOR }} />
+                {compareYear}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -284,7 +430,7 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
           {/* ── 막대 차트 ── */}
           {showChart && (
             <div className="apl-chart-wrap">
-              <Bar data={chartData} options={chartOptions} />
+              <Bar data={chartData} options={chartOptions} plugins={[barLabelPlugin]} />
             </div>
           )}
 

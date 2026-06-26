@@ -160,6 +160,7 @@ export default function Dashboard() {
 
             <div className="pl-top-row">
               <RealizedPLChart
+                key={`chart-${currentMarket}-${selectedYear}`}
                 entries={marketEntries}
                 market={currentMarket}
                 isDark={isDark}
@@ -167,12 +168,13 @@ export default function Dashboard() {
                 view="chart"
                 onYearChange={setPlYear}
               />
-              <PrincipalPLLineChart key={selectedYear} entries={filteredEntries} market={currentMarket} isDark={isDark} />
+              <PrincipalPLLineChart key={`${currentMarket}-${selectedYear}`} entries={filteredEntries} market={currentMarket} isDark={isDark} />
             </div>
 
             <div className="pl-charts-row" ref={plPanelRef}>
               <PLPeriodTable entries={marketEntries} market={currentMarket} />
               <RealizedPLChart
+                key={`list-${currentMarket}`}
                 entries={marketEntries}
                 market={currentMarket}
                 isDark={isDark}
