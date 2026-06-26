@@ -65,6 +65,21 @@ function calcMonthlyData(entries: Entry[], year: string): MonthData[] {
   return months;
 }
 
+// 분산이 큰 데이터에서 단일 이상치가 Y축 스케일을 장악하는 것을 방지.
+// 정상 막대들이 보이도록 견고한 상한(cap)을 계산한다. 이상치가 없으면 null.
+function robustCap(values: number[]): number | null {
+  const v = values.map((x) => Math.abs(x)).filter((x) => x > 0).sort((a, b) => a - b);
+  if (v.length < 3) return null;
+  const median = v[Math.floor((v.length - 1) / 2)]; // 작은쪽 중앙값(이상치에 안정적)
+  const fence = median * 5;                          // 중앙값의 5배 초과 = 이상치 후보
+  const maxV = v[v.length - 1];
+  if (maxV <= fence) return null;                    // 지배적 이상치 없음 → 일반 스케일
+  if (maxV <= v[v.length - 2] * 2.5) return null;    // 2위와 비슷하면(다중 큰값) 클램프 안 함
+  const within = v.filter((x) => x <= fence);
+  const top = within.length ? within[within.length - 1] : median;
+  return top * 1.2;                                  // 정상 최댓값에 약간의 여유
+}
+
 function SortIcon({ active, dir }: { active: boolean; dir: Dir }) {
   return (
     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: active ? 1 : 0.3, flexShrink: 0 }}>
@@ -127,23 +142,43 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
   );
   const hasCompare = !!compareData && compareData.some((m) => m.hasData);
 
+  // ── 이상치 스케일 보정 ──
+  // 현재/직전 연도의 0이 아닌 월 손익을 모아 견고한 상한(cap)을 산출.
+  // cap 초과 막대는 높이만 cap으로 잘리고, 라벨·툴팁은 실제 값을 표시한다.
+  const cap = useMemo(() => {
+    const vals = monthData.filter((m) => m.hasData).map((m) => m.pl);
+    if (hasCompare && compareData) vals.push(...compareData.filter((m) => m.hasData).map((m) => m.pl));
+    return robustCap(vals.filter((v) => v !== 0));
+  }, [monthData, compareData, hasCompare]);
+  const hasNeg = monthData.some((m) => m.hasData && m.pl < 0)
+    || (!!compareData && compareData.some((m) => m.hasData && m.pl < 0));
+  const clampV = (v: number) => (cap == null ? v : Math.max(-cap, Math.min(cap, v)));
+
   // ── 차트 색상 ──
   const PROFIT_COLOR = '#F04452';
   const LOSS_COLOR   = isDark ? '#4D94FF' : '#246CF9';
   const COMPARE_COLOR = isDark ? '#8B95A1' : '#B0B8C1';
   const textColor    = isDark ? '#A8B3C1' : '#4E5968';
   const gridColor    = isDark ? 'rgba(42,47,62,0.8)' : 'rgba(229,232,235,0.8)';
+  const zeroColor    = isDark ? '#6B7686' : '#AEB6C0'; // 0원 기준선(다른 격자선보다 진하게)
 
 
-  const values   = monthData.map((m) => m.pl);
+  // 데이터(현재/직전 연도)가 있는 달만 카테고리로 사용 → 빈 달 없이 균등 간격 배치
+  const activeIdx = monthData
+    .map((_, i) => i)
+    .filter((i) => monthData[i].hasData || compareData?.[i]?.hasData);
+  const curData = activeIdx.map((i) => monthData[i]);
+  const cmpData = compareData ? activeIdx.map((i) => compareData[i]) : null;
+  const labels  = activeIdx.map((i) => MONTH_LABELS[i]);
+
   const chartData = {
-    labels: MONTH_LABELS,
+    labels,
     datasets: [
       // 현재 연도 (색상: 수익 빨강 / 손실 파랑) — 박스 라벨 플러그인이 dataset 0 기준
       {
         label: currentYear,
-        data: values,
-        backgroundColor: values.map((v) => (v >= 0 ? PROFIT_COLOR : LOSS_COLOR)),
+        data: curData.map((m) => clampV(m.pl)),
+        backgroundColor: curData.map((m) => (m.pl >= 0 ? PROFIT_COLOR : LOSS_COLOR)),
         borderRadius: 4,
         borderSkipped: false as const,
         maxBarThickness: 40,
@@ -152,10 +187,10 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
         order: 1,
       },
       // 직전 연도 (회색) — '전체' 모드에서만
-      ...(hasCompare
+      ...(hasCompare && cmpData
         ? [{
             label: compareYear as string,
-            data: compareData!.map((m) => m.pl),
+            data: cmpData.map((m) => clampV(m.pl)),
             backgroundColor: COMPARE_COLOR,
             borderRadius: 4,
             borderSkipped: false as const,
@@ -171,13 +206,19 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
   function fmtAxis(n: number) {
     const abs  = Math.abs(n);
     const sign = n < 0 ? '-' : '';
+    // 인접 눈금이 같은 라벨로 반올림돼 중복 표시되는 것을 막기 위해
+    // 단위 환산값이 10 미만이면 소수 한 자리까지 표시(예: 1.0K, 1.4K)
+    const unit = (val: number, suffix: string) => {
+      const s = val < 10 && val % 1 !== 0 ? val.toFixed(1) : val.toFixed(0);
+      return `${sign}${suffix}`.replace('#', s);
+    };
     if (market === 'domestic') {
-      if (abs >= 100_000_000) return `${sign}₩${(abs / 100_000_000).toFixed(0)}억`;
-      if (abs >= 10_000)      return `${sign}₩${(abs / 10_000).toFixed(0)}만`;
+      if (abs >= 100_000_000) return unit(abs / 100_000_000, '₩#억');
+      if (abs >= 10_000)      return unit(abs / 10_000, '₩#만');
       return `${sign}₩${abs.toFixed(0)}`;
     }
     if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
-    if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(0)}K`;
+    if (abs >= 1_000)     return unit(abs / 1_000, '$#K');
     return `${sign}$${abs.toFixed(0)}`;
   }
 
@@ -194,8 +235,13 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (item: TooltipItem<'bar'>) =>
-            ` ${item.dataset.label}: ${fmtTooltip(item.raw as number)}`,
+          label: (item: TooltipItem<'bar'>) => {
+            // 막대 높이는 cap으로 잘릴 수 있으므로 툴팁은 실제 값을 표시
+            const real = item.datasetIndex === 0
+              ? curData[item.dataIndex]?.pl
+              : cmpData?.[item.dataIndex]?.pl;
+            return ` ${item.dataset.label}: ${fmtTooltip(real ?? (item.raw as number))}`;
+          },
         },
         backgroundColor: isDark ? '#252836' : '#fff',
         titleColor:      isDark ? '#F0F4F8' : '#191F28',
@@ -204,28 +250,29 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
         borderWidth: 1, padding: 10, cornerRadius: 8,
       },
     },
-    layout: { padding: { left: 4, right: 4, top: 18 } },
+    layout: { padding: { left: 4, right: 4, top: 6 } },
     scales: {
       x: {
-        ticks: { color: textColor, font: { size: 11, family: 'Pretendard, sans-serif' } },
+        ticks: {
+          color: textColor,
+          font: { size: 11, family: 'Pretendard, sans-serif' },
+        },
         grid: { display: false },
         border: { color: gridColor },
       },
       y: {
+        ...(cap != null ? { max: cap, min: hasNeg ? -cap : 0 } : {}),
         afterBuildTicks(scale) {
           if (scale.ticks.length < 2) return;
           const step     = scale.ticks[1].value - scale.ticks[0].value;
           const firstVal = scale.ticks[0].value;
-          const lastVal  = scale.ticks[scale.ticks.length - 1].value;
-          // 위쪽 한 단계 확장 (양수 막대 박스 여유)
-          scale.ticks.push({ value: lastVal + step, label: '' });
+          // 라벨 박스 여유만큼만 위/아래로 살짝 확장 (과한 상단 공백 방지)
+          const room = step * 0.5;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (scale as unknown as any).max = lastVal + step;
-          // 음수 값이 있으면 아래쪽도 한 단계 확장 (음수 막대 박스 여유)
-          if (firstVal < 0) {
-            scale.ticks.unshift({ value: firstVal - step, label: '' });
+          (scale as unknown as any).max = (cap != null ? cap : scale.ticks[scale.ticks.length - 1].value) + room;
+          if (firstVal < 0 || (cap != null && hasNeg)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (scale as unknown as any).min = firstVal - step;
+            (scale as unknown as any).min = (cap != null ? -cap : firstVal) - room;
           }
         },
         ticks: {
@@ -254,6 +301,26 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
     return `${sign}$${abs.toFixed(0)}`;
   }
 
+  // ── 0원 기준선을 다른 격자선보다 진하게 ──
+  const zeroLinePlugin: Plugin<'bar'> = {
+    id: 'zeroLine',
+    beforeDatasetsDraw(chart) {
+      const y = chart.scales.y;
+      if (!y || y.min > 0 || y.max < 0) return;
+      const py = Math.round(y.getPixelForValue(0)) + 0.5; // 또렷한 1px 라인
+      const { left, right } = chart.chartArea;
+      const { ctx } = chart;
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = zeroColor;
+      ctx.lineWidth = 1.5;
+      ctx.moveTo(left, py);
+      ctx.lineTo(right, py);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+
   const barLabelPlugin: Plugin<'bar'> = {
     id: 'barPLLabel',
     afterDatasetsDraw(chart) {
@@ -264,13 +331,15 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
       const padY  = 3;
       const bh    = fSize + padY * 2;
       const GAP   = 6;
+      const surfaceBg = isDark ? '#252836' : '#fff';
 
       // 데이터셋별 라벨 스펙: 0=현재 연도(수익/손실 색), 1=직전 연도(회색)
+      // 데이터는 활성 달(activeIdx) 기준으로 재정렬된 배열을 사용
       const specs: { dsIdx: number; data: MonthData[]; colorFor: (v: number) => string }[] = [
-        { dsIdx: 0, data: monthData, colorFor: (v) => (v >= 0 ? PROFIT_COLOR : LOSS_COLOR) },
+        { dsIdx: 0, data: curData, colorFor: (v) => (v >= 0 ? PROFIT_COLOR : LOSS_COLOR) },
       ];
-      if (hasCompare && compareData) {
-        specs.push({ dsIdx: 1, data: compareData, colorFor: () => COMPARE_COLOR });
+      if (hasCompare && cmpData) {
+        specs.push({ dsIdx: 1, data: cmpData, colorFor: () => COMPARE_COLOR });
       }
 
       ctx.save();
@@ -278,46 +347,99 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
+      // 1) 라벨 박스 후보 수집 (실제 값 기준 라벨, 막대 기하는 화면 좌표)
+      interface LabelItem {
+        bx: number; by: number; bw: number;
+        barX: number; barY: number; barW: number;
+        color: string; label: string; up: boolean; clipped: boolean;
+      }
+      const items: LabelItem[] = [];
       for (const spec of specs) {
         const meta = chart.getDatasetMeta(spec.dsIdx);
         if (!meta?.data?.length) continue;
-
         meta.data.forEach((el, i) => {
           const m = spec.data[i];
           if (!m || !m.hasData || m.pl === 0) return;
-
           const v     = m.pl;
-          const color = spec.colorFor(v);
+          const up    = v >= 0;
           const label = fmtBarLabel(v);
           const bw    = ctx.measureText(label).width + padX * 2;
-          const bar   = el as unknown as { x: number; y: number };
-
-          // 양수: 막대 위 / 음수: 막대 아래
-          let by = v >= 0 ? bar.y - GAP - bh : bar.y + GAP;
+          const bar   = el as unknown as { x: number; y: number; width: number };
+          let by = up ? bar.y - GAP - bh : bar.y + GAP;
           by = Math.max(chartArea.top + 2, Math.min(by, chartArea.bottom - bh - 2));
           let bx = bar.x - bw / 2;
           bx = Math.max(chartArea.left, Math.min(bx, chartArea.right - bw));
-
-          // 막대와 박스를 잇는 점선 커넥터
-          ctx.beginPath();
-          ctx.setLineDash([2, 2]);
-          ctx.strokeStyle = color;
-          ctx.lineWidth   = 1;
-          ctx.moveTo(bar.x, bar.y);
-          ctx.lineTo(bar.x, v >= 0 ? by + bh : by);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          ctx.fillStyle   = isDark ? '#252836' : '#fff';
-          ctx.strokeStyle = color;
-          ctx.lineWidth   = 1.2;
-          roundRect(ctx, bx, by, bw, bh, 4);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.fillStyle = color;
-          ctx.fillText(label, bx + bw / 2, by + bh / 2 + 0.5);
+          items.push({
+            bx, by, bw, barX: bar.x, barY: bar.y, barW: bar.width ?? 20,
+            color: spec.colorFor(v), label, up,
+            clipped: cap != null && Math.abs(v) > cap + 0.5,
+          });
         });
+      }
+
+      // 2) 충돌 회피: 좌→우로 배치하며 겹치면 0선에서 멀어지는 방향으로 세로 적재
+      const overlap = (a: LabelItem, b: LabelItem) =>
+        !(a.bx + a.bw < b.bx - 2 || a.bx > b.bx + b.bw + 2 ||
+          a.by + bh < b.by - 2 || a.by > b.by + bh + 2);
+      const placed: LabelItem[] = [];
+      items.sort((a, b) => a.barX - b.barX);
+      for (const it of items) {
+        for (let guard = 0; guard < 8 && placed.some((p) => overlap(it, p)); guard++) {
+          it.by += it.up ? -(bh + 3) : (bh + 3);
+        }
+        it.by = Math.max(chartArea.top + 2, Math.min(it.by, chartArea.bottom - bh - 2));
+        placed.push(it);
+      }
+
+      // 3) 그리기: 커넥터 → 절단 표시 → 박스 → 텍스트
+      for (const it of placed) {
+        // 막대-박스 점선 커넥터
+        ctx.beginPath();
+        ctx.setLineDash([2, 2]);
+        ctx.strokeStyle = it.color;
+        ctx.lineWidth   = 1;
+        ctx.moveTo(it.barX, it.barY);
+        ctx.lineTo(it.barX, it.up ? it.by + bh : it.by);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // cap으로 잘린 막대: 끝에 절단(break) 표시 — 물결 2줄(≈)
+        if (it.clipped) {
+          const halfW = Math.min(it.barW, 26) / 2;
+          const x0 = it.barX - halfW;
+          const width = halfW * 2;
+          const amp = 1.4;        // 물결 진폭
+          const gap = 2.4;        // 두 물결 사이 간격
+          const yMid = it.barY + (it.up ? 5 : -5);
+          // 막대를 가로질러 흰 띠로 끊긴 느낌 부여
+          ctx.fillStyle = surfaceBg;
+          ctx.fillRect(x0 - 1, yMid - gap - amp - 1, width + 2, (gap + amp + 1) * 2);
+          // 평행한 물결선 2줄
+          ctx.strokeStyle = it.color;
+          ctx.lineWidth = 1.3;
+          for (const baseY of [yMid - gap, yMid + gap]) {
+            ctx.beginPath();
+            const steps = 12;
+            for (let k = 0; k <= steps; k++) {
+              const px = x0 + (width * k) / steps;
+              const py = baseY + amp * Math.sin((k / steps) * Math.PI * 2);
+              if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+          }
+        }
+
+        // 박스
+        ctx.fillStyle   = surfaceBg;
+        ctx.strokeStyle = it.color;
+        ctx.lineWidth   = 1.2;
+        roundRect(ctx, it.bx, it.by, it.bw, bh, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        // 텍스트
+        ctx.fillStyle = it.color;
+        ctx.fillText(it.label, it.bx + it.bw / 2, it.by + bh / 2 + 0.5);
       }
 
       ctx.restore();
@@ -430,7 +552,7 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
           {/* ── 막대 차트 ── */}
           {showChart && (
             <div className="apl-chart-wrap">
-              <Bar data={chartData} options={chartOptions} plugins={[barLabelPlugin]} />
+              <Bar data={chartData} options={chartOptions} plugins={[zeroLinePlugin, barLabelPlugin]} />
             </div>
           )}
 
