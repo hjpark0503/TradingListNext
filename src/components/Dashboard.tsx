@@ -6,8 +6,8 @@ import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
 import { Market } from '@/lib/types';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
-import { fmtUsd, fmtKrw } from '@/lib/utils';
-import { calcRealizedPL } from '@/lib/calculations';
+import { fmtUsd, fmtKrw, formatUsd } from '@/lib/utils';
+import { calcRealizedPL, calcPLByYear } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { RealizedPLChart } from './RealizedPLChart';
 import { MonthlyDividendChart } from './MonthlyDividendChart';
@@ -40,6 +40,27 @@ export default function Dashboard() {
 
   // 원가는 전체 이력으로 계산하고 집계만 선택 연도로 거름 (월별 차트·기간별 표와 일치)
   const realizedPL = calcRealizedPL(marketEntries, selectedYear === '전체' ? undefined : selectedYear);
+  // '전체' 탭에서 보여줄 연도별 실현손익 (최신 연도 우선)
+  const plByYear = calcPLByYear(marketEntries).slice().sort((a, b) => b.label.localeCompare(a.label));
+  // '전체' 탭 연도별 원금(순입출금 = 입금 − 출금), 모든 거래 연도 포함(없으면 0)
+  const principalByYear = years
+    .filter((y) => y !== '전체')
+    .map((y) => ({
+      label: y,
+      val: marketEntries
+        .filter((e) => (e.type === 'deposit' || e.type === 'withdraw') && e.date?.startsWith(y))
+        .reduce((s, e) => s + (e.type === 'deposit' ? e.settlement : -e.settlement), 0),
+    }));
+  // 배당금 합계(선택 연도) + '전체' 탭 연도별 내역
+  const dividendTotal = filteredEntries.filter((e) => e.type === 'div').reduce((s, e) => s + e.settlement, 0);
+  const dividendByYear = years
+    .filter((y) => y !== '전체')
+    .map((y) => ({
+      label: y,
+      val: marketEntries
+        .filter((e) => e.type === 'div' && e.date?.startsWith(y))
+        .reduce((s, e) => s + e.settlement, 0),
+    }));
 
   const plPanelRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +97,14 @@ export default function Dashboard() {
     if (filteredEntries.filter((e) => e.type === 'sell').length === 0) return 'text-muted';
     return realizedPL.totalPL >= 0 ? 'pl-pos' : 'pl-neg';
   }
+  // 부호(+/-)를 붙인 금액 포맷 (연도별 내역용). 0은 부호 없이 표시.
+  function fmtSignedPL(v: number) {
+    const sign = v > 0 ? '+' : v < 0 ? '-' : '';
+    const body = currentMarket === 'domestic'
+      ? `₩${Math.round(Math.abs(v)).toLocaleString('ko-KR')}`
+      : `$${formatUsd(Math.abs(v))}`;
+    return `${sign}${body}`;
+  }
 
   function principalValue() {
     const deposits = filteredEntries.filter((e) => e.type === 'deposit').reduce((s, e) => s + e.settlement, 0);
@@ -83,6 +112,10 @@ export default function Dashboard() {
     const principal = deposits - withdrawals;
     if (currentMarket === 'domestic') return fmtKrw(principal);
     return fmtUsd(principal);
+  }
+
+  function dividendValue() {
+    return currentMarket === 'domestic' ? fmtKrw(dividendTotal) : fmtUsd(dividendTotal);
   }
 
   function returnRateValue() {
@@ -136,27 +169,65 @@ export default function Dashboard() {
               ))}
             </div>
 
-            <div className="summary-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+            <div className="summary-grid summary-grid--stats">
               <div
                 className="card card-pl"
                 style={{ cursor: 'pointer', gridColumn: 'span 1' }}
                 onClick={() => plPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               >
-                <div className="label">실현손익</div>
+                <div className="label">{selectedYear === '전체' ? '총 실현손익' : '실현손익'}</div>
                 <div className={`value ${plCardColor()}`} style={{ fontSize: valueSize(plCardValue()) }}>
                   {plCardValue()}
                   {returnRateValue() !== '—' && (
                     <span className="pl-rate-inline">({returnRateValue()})</span>
                   )}
                 </div>
+                {selectedYear === '전체' && plByYear.length > 0 && (
+                  <div className="pl-year-breakdown">
+                    {plByYear.map((r) => (
+                      <div className="pl-year-row" key={r.label}>
+                        <span className="pl-year-row__label">{r.label}년</span>
+                        <span className={`pl-year-row__val ${r.pl >= 0 ? 'pl-pos' : 'pl-neg'}`}>
+                          {fmtSignedPL(r.pl)}
+                          {r.hasIncompleteData && <span className="pl-year-row__warn"> ⚠</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {realizedPL.hasIncompleteData && (
                   <div className="note">⚠ 매수 데이터 부분 누락</div>
                 )}
               </div>
 
+              <div className="card card-stat card-div" style={{ gridColumn: 'span 1' }}>
+                <div className="label">{selectedYear === '전체' ? '총 배당금' : '배당금'}</div>
+                <div className="value" style={{ fontSize: valueSize(dividendValue()) }}>{dividendValue()}</div>
+                {selectedYear === '전체' && dividendByYear.length > 0 && (
+                  <div className="pl-year-breakdown">
+                    {dividendByYear.map((r) => (
+                      <div className="pl-year-row" key={r.label}>
+                        <span className="pl-year-row__label">{r.label}년</span>
+                        <span className="pl-year-row__val">{fmtSignedPL(r.val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="card card-stat card-principal" style={{ gridColumn: 'span 1' }}>
-                <div className="label">원금</div>
+                <div className="label">{selectedYear === '전체' ? '총 원금' : '원금'}</div>
                 <div className="value" style={{ fontSize: valueSize(principalValue()) }}>{principalValue()}</div>
+                {selectedYear === '전체' && principalByYear.length > 0 && (
+                  <div className="pl-year-breakdown">
+                    {principalByYear.map((r) => (
+                      <div className="pl-year-row" key={r.label}>
+                        <span className="pl-year-row__label">{r.label}년</span>
+                        <span className="pl-year-row__val">{fmtSignedPL(r.val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

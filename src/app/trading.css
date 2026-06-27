@@ -556,6 +556,8 @@ select.inp {
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
 }
+/* 실현손익·배당금·원금 3열 통계 카드 (모바일에선 세로 1열) */
+.summary-grid--stats { grid-template-columns: repeat(3, 1fr); }
 .summary-grid .pl-detail-panel {
   grid-column: 1 / -1;
 }
@@ -577,6 +579,38 @@ select.inp {
 .card-pl .pl-pos { color:var(--loss) !important; }
 .card-pl .pl-neg { color:var(--gain) !important; }
 .card-pl .text-muted { color:var(--text-muted) !important; }
+
+/* 배당금 카드 — 배당 테마(오렌지) */
+.card-div .value,
+.card-div .pl-year-row__val { color: var(--div-color); }
+
+/* '전체' 탭 연도별 실현손익 내역 */
+.pl-year-breakdown {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pl-year-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pl-year-row__label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.pl-year-row__val {
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+.pl-year-row__warn { color: var(--text-muted); font-weight: 600; }
 
 /* 실현손익 계산 내역 패널 */
 .pl-detail-panel {
@@ -1246,6 +1280,7 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .summary-grid-spacer { display:none; }
   .cards { grid-template-columns:repeat(2,1fr); gap:10px; }
   .summary-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+  .summary-grid--stats { grid-template-columns:1fr; }
   .card-pl { grid-column: span 2; }
   .card .value { font-size:1.3rem; }
 }
