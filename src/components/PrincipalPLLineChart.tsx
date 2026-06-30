@@ -82,6 +82,39 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
       const { ctx, chartArea } = chart;
       if (!chartArea) return;
 
+      // ── 범례 (x축 아래 중앙) ──
+      const legItems = [
+        { label: '원금',         color: pColor    },
+        { label: '누적 실현금액', color: evalColor },
+      ];
+      const legFSize  = 10;
+      const dotSize   = 8;
+      const dotGap    = 5;
+      const itemGap   = 16;
+
+      ctx.save();
+      ctx.font = `600 ${legFSize}px Pretendard, sans-serif`;
+      ctx.textBaseline = 'middle';
+
+      const totalW = legItems.reduce((s, it, i) =>
+        s + dotSize + dotGap + ctx.measureText(it.label).width + (i < legItems.length - 1 ? itemGap : 0), 0);
+
+      let lx = (chart.width - totalW) / 2;
+      const ly = chart.height - 10;
+
+      for (const { label, color } of legItems) {
+        ctx.fillStyle = color;
+        roundRect(ctx, lx, ly - dotSize / 2, dotSize, dotSize, 2);
+        ctx.fill();
+        lx += dotSize + dotGap;
+
+        ctx.fillStyle = dark ? '#A8B3C1' : '#6B7684';
+        ctx.fillText(label, lx, ly);
+        lx += ctx.measureText(label).width + itemGap;
+      }
+
+      ctx.restore();
+
       const fSize  = 11;
       const padX   = 7;
       const padY   = 4;
@@ -285,7 +318,7 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
         boxPadding: 4,
       },
     },
-    layout: { padding: { left: 4, bottom: 2, right: 8 } },
+    layout: { padding: { left: 4, bottom: 28, right: 8 } },
     scales: {
       x: {
         ticks: {
@@ -323,14 +356,6 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
     <div className="rpl-panel">
       <div className="rpl-header pl-chart-header">
         <span className="rpl-title">투자 성과 추이</span>
-
-        {/* 레전드 (오른쪽 정렬) */}
-        <div className="pl-line-legend">
-          <span className="pl-line-dot" style={{ background: principalColor }} />
-          <span className="pl-line-label">원금</span>
-          <span className="pl-line-dot" style={{ background: plColor }} />
-          <span className="pl-line-label">누적 실현금액</span>
-        </div>
       </div>
 
       <div className="pl-line-chart-wrap">

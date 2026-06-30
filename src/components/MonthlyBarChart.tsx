@@ -67,11 +67,14 @@ interface Props {
   // 'pl' = 수익 빨강/손실 파랑, 'income' = 단일색(배당 등)
   colorMode?: 'pl' | 'income';
   incomeColor?: string;
+  bare?: boolean;        // true이면 apl-panel/apl-header 없이 차트 영역만 렌더
+  showAllMonths?: boolean; // true이면 데이터 유무에 상관없이 1~12월 모두 표시
 }
 
 export function MonthlyBarChart({
   title, monthData, compareData, currentLabel, compareLabel,
   market, isDark, emptyText, colorMode = 'pl', incomeColor = '#F97316',
+  bare = false, showAllMonths = false,
 }: Props) {
   const hasCompare = !!compareData && compareData.some((m) => m.hasData);
 
@@ -85,10 +88,11 @@ export function MonthlyBarChart({
   const barColorFor = (v: number) => (colorMode === 'income' ? incomeColor : (v >= 0 ? PROFIT_COLOR : LOSS_COLOR));
   const legendColor = colorMode === 'income' ? incomeColor : PROFIT_COLOR;
 
-  // 데이터(현재/직전 연도)가 있는 달만 카테고리로 사용 → 빈 달 없이 균등 간격 배치
-  const activeIdx = monthData
-    .map((_, i) => i)
-    .filter((i) => monthData[i].hasData || compareData?.[i]?.hasData);
+  // showAllMonths: 1~12월 전부 표시 / 기본: 데이터 있는 달만
+  const activeIdx = showAllMonths
+    ? Array.from({ length: 12 }, (_, i) => i)
+    : monthData.map((_, i) => i).filter((i) => monthData[i].hasData || compareData?.[i]?.hasData);
+  const hasAnyData = monthData.some((m) => m.hasData) || (compareData?.some((m) => m.hasData) ?? false);
   const curMonths = activeIdx.map((i) => monthData[i]);
   const cmpMonths = compareData ? activeIdx.map((i) => compareData[i]) : null;
 
@@ -190,7 +194,7 @@ export function MonthlyBarChart({
         borderWidth: 1, padding: 10, cornerRadius: 8,
       },
     },
-    layout: { padding: { left: 4, right: 4, top: 6 } },
+    layout: { padding: { left: 4, right: 4, top: 6, bottom: 28 } },
     scales: {
       x: {
         ticks: {
@@ -371,6 +375,55 @@ export function MonthlyBarChart({
     },
   };
 
+  // ── 범례 (x축 아래 중앙) ──
+  const legendItems: { label: string; color: string }[] = [
+    { label: `${currentLabel}년`, color: legendColor },
+    ...(hasCompare && compareLabel ? [{ label: `${compareLabel}년`, color: COMPARE_COLOR }] : []),
+  ];
+  const legendPlugin: Plugin<'bar'> = {
+    id: 'barLegend',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const legFSize = 10;
+      const dotSize  = 8;
+      const dotGap   = 5;
+      const itemGap  = 16;
+
+      ctx.save();
+      ctx.font = `600 ${legFSize}px Pretendard, sans-serif`;
+      ctx.textBaseline = 'middle';
+
+      const totalW = legendItems.reduce((s, it, i) =>
+        s + dotSize + dotGap + ctx.measureText(it.label).width + (i < legendItems.length - 1 ? itemGap : 0), 0);
+
+      let lx = (chart.width - totalW) / 2;
+      const ly = chart.height - 10;
+
+      for (const { label, color } of legendItems) {
+        ctx.fillStyle = color;
+        roundRect(ctx, lx, ly - dotSize / 2, dotSize, dotSize, 2);
+        ctx.fill();
+        lx += dotSize + dotGap;
+
+        ctx.fillStyle = isDark ? '#A8B3C1' : '#6B7684';
+        ctx.fillText(label, lx, ly);
+        lx += ctx.measureText(label).width + itemGap;
+      }
+
+      ctx.restore();
+    },
+  };
+
+  if (bare) {
+    return !hasAnyData ? (
+      <div className="panel-empty">{emptyText}</div>
+    ) : (
+      <div className="apl-chart-wrap">
+        <Bar data={chartData} options={chartOptions} plugins={[zeroLinePlugin, cumDividerPlugin, barLabelPlugin, legendPlugin]} />
+      </div>
+    );
+  }
+
   return (
     <div className="apl-panel">
       <div className="apl-header">
@@ -393,7 +446,7 @@ export function MonthlyBarChart({
         <div className="panel-empty">{emptyText}</div>
       ) : (
         <div className="apl-chart-wrap">
-          <Bar data={chartData} options={chartOptions} plugins={[zeroLinePlugin, cumDividerPlugin, barLabelPlugin]} />
+          <Bar data={chartData} options={chartOptions} plugins={[zeroLinePlugin, cumDividerPlugin, barLabelPlugin, legendPlugin]} />
         </div>
       )}
     </div>

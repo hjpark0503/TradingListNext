@@ -10,7 +10,7 @@ import { fmtUsd, fmtKrw, formatUsd } from '@/lib/utils';
 import { calcRealizedPL, calcPLByYear } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { RealizedPLChart } from './RealizedPLChart';
-import { MonthlyDividendChart } from './MonthlyDividendChart';
+import { MonthlyChartPanel } from './MonthlyChartPanel';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
 import { NoticeTicker } from './NoticeTicker';
 import { PLPeriodFloatingList } from './PLPeriodFloatingList';
@@ -68,8 +68,6 @@ export default function Dashboard() {
     Array.from(new Set(marketEntries.filter((e) => e.type === 'sell').map((e) => e.date?.slice(0, 4)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
     [marketEntries]
   );
-  const [plYear, setPlYear] = useState<string | undefined>(undefined);
-  const resolvedPlYear = plYear ?? plChartYears[0];
 
   function handleMarketChange(m: Market) {
     switchMarket(m);
@@ -234,24 +232,13 @@ export default function Dashboard() {
             {/* 투자 성과 추이 — 전체 너비로 상단 배치 */}
             <PrincipalPLLineChart key={`${currentMarket}-${selectedYear}`} entries={filteredEntries} market={currentMarket} isDark={isDark} />
 
-            <div className="pl-top-row">
-              <RealizedPLChart
-                key={`chart-${currentMarket}-${selectedYear}`}
-                entries={marketEntries}
-                market={currentMarket}
-                isDark={isDark}
-                year={selectedYear === '전체' ? undefined : selectedYear}
-                view="chart"
-                onYearChange={setPlYear}
-              />
-              <MonthlyDividendChart
-                key={`div-${currentMarket}-${selectedYear}`}
-                entries={marketEntries}
-                market={currentMarket}
-                isDark={isDark}
-                year={selectedYear === '전체' ? undefined : selectedYear}
-              />
-            </div>
+            <MonthlyChartPanel
+              key={`monthly-${currentMarket}-${selectedYear}`}
+              entries={marketEntries}
+              market={currentMarket}
+              isDark={isDark}
+              year={selectedYear === '전체' ? undefined : selectedYear}
+            />
 
             <div className="pl-charts-row" ref={plPanelRef}>
               <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} />
@@ -260,7 +247,7 @@ export default function Dashboard() {
                 entries={marketEntries}
                 market={currentMarket}
                 isDark={isDark}
-                year={selectedYear === '전체' ? resolvedPlYear : selectedYear}
+                year={selectedYear === '전체' ? plChartYears[0] : selectedYear}
                 view="list"
               />
             </div>
