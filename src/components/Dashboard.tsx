@@ -13,7 +13,7 @@ import { RealizedPLChart } from './RealizedPLChart';
 import { MonthlyDividendChart } from './MonthlyDividendChart';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
 import { NoticeTicker } from './NoticeTicker';
-import { PLPeriodTable } from './PLPeriodTable';
+import { PLPeriodFloatingList } from './PLPeriodFloatingList';
 
 function valueSize(val: string): string {
   const n = val.length;
@@ -254,7 +254,7 @@ export default function Dashboard() {
             </div>
 
             <div className="pl-charts-row" ref={plPanelRef}>
-              <PLPeriodTable entries={marketEntries} market={currentMarket} />
+              <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} />
               <RealizedPLChart
                 key={`list-${currentMarket}`}
                 entries={marketEntries}

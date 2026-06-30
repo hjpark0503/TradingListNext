@@ -2468,3 +2468,92 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   color: var(--out-color);
   margin-left: 3px;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   PLPeriodFloatingList — 기간별 실현손익 펼치기 리스트
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 기간별 패널 내 rpl-children — 기본 회색 유지 */
+
+/* 데이터 없는 항목 비활성화 */
+.plfl-row-disabled {
+  opacity: .58;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+/* 반기/분기 행 (rpl-child 안에 들어가는 펼칠 수 있는 버튼) */
+.plfl-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Pretendard', sans-serif;
+  padding: 7px 16px 7px 20px;
+  transition: background .1s;
+}
+.plfl-sub:hover:not(.plfl-row-disabled) { background: var(--bg-base); }
+[data-theme="dark"] .plfl-sub:hover:not(.plfl-row-disabled) { background: rgba(255,255,255,.04); }
+
+.plfl-sub--quarter { padding-left: 36px; }
+
+.plfl-sub__label {
+  flex: 1;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.plfl-sub__pl {
+  font-size: .8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.plfl-sub__empty {
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+/* 월 행 (leaf) */
+.plfl-leaf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px 5px 52px;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+.plfl-leaf:last-child { border-bottom: none; }
+
+.plfl-leaf__label {
+  flex: 1;
+  font-size: .78rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.plfl-leaf__pl {
+  font-size: .78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.plfl-leaf__empty {
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+/* 중첩 컨테이너 — 회색 계열 */
+.plfl-level1 { background: var(--bg-base); }
+.plfl-level2 { background: var(--bg-input); }
+.plfl-level3 { background: var(--bg-input); }
+
+/* 구분선: 반기 그룹 사이 (가장 두꺼운 계층) */
+.plfl-level1 > div + div { border-top: 1px solid var(--border); }
+
+/* 구분선: 분기 그룹 사이 */
+.plfl-level2 > div + div { border-top: 1px solid rgba(0,0,0,.08); }
+
+/* 구분선: 펼쳐진 하위 영역 위 (월/분기 내부 상단) */
+.plfl-level2 { border-top: 1px solid rgba(0,0,0,.08); }
+.plfl-level3 { border-top: 1px solid rgba(0,0,0,.05); }
