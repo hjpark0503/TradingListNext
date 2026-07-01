@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { Header } from './Header';
@@ -73,15 +73,6 @@ export default function Dashboard() {
     }));
 
   const plPanelRef = useRef<HTMLDivElement>(null);
-
-  const plChartYears = useMemo(() =>
-    Array.from(new Set(marketEntries.filter((e) => e.type === 'sell').map((e) => e.date?.slice(0, 4)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
-    [marketEntries]
-  );
-  const divChartYears = useMemo(() =>
-    Array.from(new Set(marketEntries.filter((e) => e.type === 'div').map((e) => e.date?.slice(0, 4)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
-    [marketEntries]
-  );
 
   function handleMarketChange(m: Market) {
     switchMarket(m);
@@ -272,7 +263,7 @@ export default function Dashboard() {
                     entries={marketEntries}
                     market={currentMarket}
                     isDark={isDark}
-                    year={selectedYear === '전체' ? plChartYears[0] : selectedYear}
+                    year={selectedYear === '전체' ? undefined : selectedYear}
                     view="list"
                   />
                 </>
@@ -282,7 +273,7 @@ export default function Dashboard() {
                   <DividendDetailPanel
                     entries={marketEntries}
                     market={currentMarket}
-                    year={selectedYear === '전체' ? divChartYears[0] : selectedYear}
+                    year={selectedYear === '전체' ? undefined : selectedYear}
                   />
                 </>
               )}

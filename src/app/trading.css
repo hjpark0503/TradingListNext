@@ -1339,7 +1339,8 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .summary-grid-spacer { display:none; }
   .cards { grid-template-columns:repeat(2,1fr); gap:10px; }
   .summary-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
-  .summary-grid--stats { grid-template-columns:1fr; }
+  /* 배당금·원금 카드는 화면 폭에 상관없이 항상 2열로 수평 정렬 유지 */
+  .summary-grid--stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .card-pl { grid-column: span 2; }
   /* 카드 개수가 홀수면 마지막 카드가 혼자 남아 반쪽이 비므로 전체 너비로 확장 */
   .summary-grid > .card:last-child:nth-child(odd) { grid-column: span 2; }
@@ -1367,8 +1368,10 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .card .value { font-size:1.1rem; }
   .card .label { font-size:.72rem; }
   /* 좁은 카드에서 수익률이 잘리지 않도록 줄바꿈 */
-  .card-pl .value { white-space:normal; }
-  .card-pl .pl-rate-inline { display:block; margin-left:0; margin-top:2px; font-size:.82rem; }
+  .card-pl .value,
+  .portfolio-summary-cards .value { white-space:normal; }
+  .card-pl .pl-rate-inline,
+  .portfolio-summary-cards .pl-rate-inline { display:block; margin-left:0; margin-top:2px; font-size:.82rem; }
   /* 차트 */
   .chart-wrap--tall { height:180px; }
   /* 탭 & 테이블 */

@@ -97,8 +97,9 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
   const [stockSort,  setStockSort]  = useState<{ col: 'stock' | 'pl'; dir: Dir }>({ col: 'pl', dir: 'desc' });
 
   // 원가(이동평균)는 전체 이력으로 계산하고, 표시는 선택 연도 매도만 거른다.
-  const byDate  = useMemo(() => calcPLByDate(entries, currentYear),   [entries, currentYear]);
-  const byStock = useMemo(() => calcPLByStock(entries, currentYear),  [entries, currentYear]);
+  // externalYear가 없으면(= '전체') 특정 연도로 대체하지 않고 모든 연도를 보여준다.
+  const byDate  = useMemo(() => calcPLByDate(entries, externalYear),   [entries, externalYear]);
+  const byStock = useMemo(() => calcPLByStock(entries, externalYear),  [entries, externalYear]);
 
   const sortedByDate = [...byDate].sort((a, b) => {
     const mul = dateSort.dir === 'asc' ? 1 : -1;
