@@ -1669,6 +1669,20 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 .rpl-col-btn.active { color: var(--text-primary); }
 .rpl-col-btn--right { margin-left: auto; }
 
+.rpl-col-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 0;
+  font-family: 'Pretendard', sans-serif;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.rpl-col-label--right { margin-left: auto; }
+
 /* ── 연도/월 단순 행 ── */
 .rpl-period-row {
   display: flex;

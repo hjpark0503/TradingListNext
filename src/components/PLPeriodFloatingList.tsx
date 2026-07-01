@@ -71,6 +71,10 @@ export function PLPeriodFloatingList({ entries, market, selectedYear }: Props) {
         <div className="panel-empty">매도 내역이 없습니다.</div>
       ) : (
         <div className="rpl-list-col">
+          <div className="rpl-col-header">
+            <span className="rpl-col-label">기간</span>
+            <span className="rpl-col-label rpl-col-label--right">실현손익</span>
+          </div>
           {data.map((year) => {
             const yHasData  = hasData(year);
             const yExpanded = expanded.has(year.label);
