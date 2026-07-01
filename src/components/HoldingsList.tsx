@@ -5,7 +5,11 @@ import type { Entry, Market } from '@/lib/types';
 
 export type HoldingFilter = 'all' | 'stock' | 'etf';
 
-const ETF_PREFIXES = ['KODEX', 'TIGER', 'KINDEX', 'HANARO', 'ARIRANG', 'KOSEF', 'KBSTAR', 'ACE', 'TIMEFOLIO', 'PLUS'];
+const ETF_PREFIXES = [
+  'KODEX', 'TIGER', 'KINDEX', 'HANARO', 'ARIRANG', 'KOSEF', 'KBSTAR', 'ACE',
+  'TIMEFOLIO', 'PLUS', 'SOL', 'WON', 'KOACT', '1Q', 'FOCUS', '마이티', '히어로즈',
+  'POWER', '파워', '마이다스', '트러스톤', 'SMART',
+];
 
 export function isETF(name: string): boolean {
   const upper = name.toUpperCase().trim();
