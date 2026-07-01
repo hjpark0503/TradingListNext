@@ -10,7 +10,6 @@ import { fmtUsd, fmtKrw, formatUsd } from '@/lib/utils';
 import { calcRealizedPL, calcPLByYear } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
 import { RealizedPLChart } from './RealizedPLChart';
-import { MonthlyChartPanel } from './MonthlyChartPanel';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
 import { NoticeTicker } from './NoticeTicker';
 import { PLPeriodFloatingList } from './PLPeriodFloatingList';
@@ -231,14 +230,6 @@ export default function Dashboard() {
 
             {/* 투자 성과 추이 — 전체 너비로 상단 배치 */}
             <PrincipalPLLineChart key={`${currentMarket}-${selectedYear}`} entries={filteredEntries} market={currentMarket} isDark={isDark} />
-
-            <MonthlyChartPanel
-              key={`monthly-${currentMarket}-${selectedYear}`}
-              entries={marketEntries}
-              market={currentMarket}
-              isDark={isDark}
-              year={selectedYear === '전체' ? undefined : selectedYear}
-            />
 
             <div className="pl-charts-row" ref={plPanelRef}>
               <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} />

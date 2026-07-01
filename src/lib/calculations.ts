@@ -398,6 +398,7 @@ export interface PrincipalPLPoint {
   date: string;
   principal: number;
   cumulativePL: number;
+  cumulativeDiv: number;
 }
 
 export function calcPrincipalAndPLOverTime(entries: Entry[]): PrincipalPLPoint[] {
@@ -405,7 +406,7 @@ export function calcPrincipalAndPLOverTime(entries: Entry[]): PrincipalPLPoint[]
 
   const eventDates = new Set<string>();
   for (const e of entries) {
-    if (e.type === 'deposit' || e.type === 'withdraw' || e.type === 'sell') {
+    if (e.type === 'deposit' || e.type === 'withdraw' || e.type === 'sell' || e.type === 'div') {
       eventDates.add(e.date);
     }
   }
@@ -415,6 +416,7 @@ export function calcPrincipalAndPLOverTime(entries: Entry[]): PrincipalPLPoint[]
 
   let cumulativePrincipal = 0;
   let cumulativePL = 0;
+  let cumulativeDiv = 0;
   const result: PrincipalPLPoint[] = [];
 
   for (const date of sortedDates) {
@@ -424,9 +426,11 @@ export function calcPrincipalAndPLOverTime(entries: Entry[]): PrincipalPLPoint[]
       else if (e.type === 'sell' && e.qty > 0) {
         const info = plMap.get(e);
         if (info?.hasBuyData) cumulativePL += info.pl;
+      } else if (e.type === 'div') {
+        cumulativeDiv += e.settlement;
       }
     }
-    result.push({ date, principal: cumulativePrincipal, cumulativePL });
+    result.push({ date, principal: cumulativePrincipal, cumulativePL, cumulativeDiv });
   }
 
   return result;

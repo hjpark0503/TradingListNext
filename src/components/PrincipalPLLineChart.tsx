@@ -26,10 +26,14 @@ interface Props {
 }
 
 interface LastFmtRef {
-  evalLabel: string;
-  evalColor: string;
   principalLabel: string;
   principalColor: string;
+  plLabel: string;
+  plColor: string;
+  divLabel: string;
+  divColor: string;
+  totalLabel: string;
+  totalColor: string;
   dark: boolean;
 }
 
@@ -57,6 +61,7 @@ function aggregateMonthly(points: PrincipalPLPoint[]): PrincipalPLPoint[] {
       date: p.date.slice(0, 7),
       principal: p.principal,
       cumulativePL: p.cumulativePL,
+      cumulativeDiv: p.cumulativeDiv,
     });
   }
   return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
@@ -69,8 +74,10 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
 
   // Ref holds the latest label info so the stable plugin can always read fresh values
   const lastFmtRef = useRef<LastFmtRef>({
-    evalLabel: '', evalColor: '',
     principalLabel: '', principalColor: '',
+    plLabel: '', plColor: '',
+    divLabel: '', divColor: '',
+    totalLabel: '', totalColor: '',
     dark: false,
   });
 
@@ -78,14 +85,22 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
   const lastValuePlugin = useMemo<Plugin<'line'>>(() => ({
     id: 'plLastValue',
     afterDraw(chart) {
-      const { evalLabel, evalColor, principalLabel, principalColor: pColor, dark } = lastFmtRef.current;
+      const {
+        principalLabel, principalColor: pColor,
+        plLabel, plColor: rplColor,
+        divLabel, divColor,
+        totalLabel, totalColor,
+        dark,
+      } = lastFmtRef.current;
       const { ctx, chartArea } = chart;
       if (!chartArea) return;
 
       // ── 범례 (x축 아래 중앙) ──
       const legItems = [
-        { label: '원금',         color: pColor    },
-        { label: '누적 실현금액', color: evalColor },
+        { label: '원금',     color: pColor    },
+        { label: '실현손익', color: rplColor  },
+        { label: '배당금',   color: divColor  },
+        { label: '전체',     color: totalColor },
       ];
       const legFSize  = 10;
       const dotSize   = 8;
@@ -119,16 +134,18 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
       const padX   = 7;
       const padY   = 4;
       const bh     = fSize + padY * 2;
-      const GAP    = 12; // 점과 라벨 사이 거리
-      const BOX_GAP = 4; // 겹칠 때 두 박스 사이 간격
+      const GAP    = 26; // 점과 라벨 사이 거리
+      const BOX_GAP = 4; // 박스끼리 겹칠 때 최소 간격
 
       ctx.font = `700 ${fSize}px Pretendard, sans-serif`;
 
-      // 두 데이터셋의 마지막 점 수집
+      // 4개 데이터셋 모두의 마지막 점에 라벨 표시
       const items: { dsIdx: number; label: string; color: string; x: number; y: number; bw: number; by: number }[] = [];
       for (const [dsIdx, label, color] of [
         [0, principalLabel, pColor],
-        [1, evalLabel, evalColor],
+        [1, plLabel, rplColor],
+        [2, divLabel, divColor],
+        [3, totalLabel, totalColor],
       ] as [number, string, string][]) {
         if (!label) continue;
         const meta = chart.getDatasetMeta(dsIdx);
@@ -138,16 +155,31 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
         items.push({ dsIdx, label, color, x: el.x, y: el.y, bw, by: 0 });
       }
 
-      // 기본 위치: 각 점에서 GAP만큼 위
+      // 기본 위치: 각 점 옆(오른쪽)에 세로 중앙 정렬
       for (const item of items) {
-        item.by = Math.max(chartArea.top + 4, item.y - bh - GAP);
+        item.by = Math.min(
+          Math.max(chartArea.top + 4, item.y - bh / 2),
+          chartArea.bottom - bh - 4
+        );
       }
 
-      // 겹침 보정: 두 박스가 겹치면 위쪽 박스를 더 올림
-      if (items.length === 2) {
-        const [a, b] = items[0].by <= items[1].by ? [items[0], items[1]] : [items[1], items[0]];
-        if (a.by + bh + BOX_GAP > b.by) {
-          a.by = Math.max(chartArea.top + 4, b.by - bh - BOX_GAP);
+      // 겹침 보정: y 기준 정렬 후 위에서 아래로 최소 간격 확보, 넘치면 아래에서 위로 재보정
+      items.sort((a, b) => a.by - b.by);
+      for (let i = 1; i < items.length; i++) {
+        const prev = items[i - 1];
+        const cur  = items[i];
+        if (cur.by < prev.by + bh + BOX_GAP) {
+          cur.by = prev.by + bh + BOX_GAP;
+        }
+      }
+      const maxBy = chartArea.bottom - 4 - bh;
+      if (items.length && items[items.length - 1].by > maxBy) {
+        items[items.length - 1].by = maxBy;
+        for (let i = items.length - 2; i >= 0; i--) {
+          const next = items[i + 1];
+          if (items[i].by > next.by - bh - BOX_GAP) {
+            items[i].by = next.by - bh - BOX_GAP;
+          }
         }
       }
 
@@ -165,17 +197,16 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
         ctx.fillStyle = color;
         ctx.fill();
 
-        // 라벨 x 위치 (차트 영역 내 클램프)
-        let bx = x - bw / 2;
-        bx = Math.max(chartArea.left, Math.min(bx, chartArea.right - bw));
+        // 라벨 x 위치 (점 오른쪽, 캔버스 폭 안에서 클램프)
+        const bx = Math.min(x + GAP, chart.width - bw - 4);
 
         // 점선 커넥터
         ctx.beginPath();
         ctx.setLineDash([2, 2]);
         ctx.strokeStyle = color;
         ctx.lineWidth = 1;
-        ctx.moveTo(x, y - 7);
-        ctx.lineTo(x, by + bh);
+        ctx.moveTo(x + 7, y);
+        ctx.lineTo(bx, by + bh / 2);
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -202,11 +233,13 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
 
   /* ── 색상 판단 ── */
   const lastPoint = points[points.length - 1];
-  const isNeg     = lastPoint.cumulativePL < 0;
+  const isTotalNeg = lastPoint.principal + lastPoint.cumulativePL + lastPoint.cumulativeDiv < 0;
 
   /* ── 색상 ── */
   const principalColor = isDark ? '#8B95A1' : '#B0B8C1';
-  const plColor        = isNeg ? '#F04452' : (isDark ? '#4ECDC4' : '#00B493');
+  const plColor        = isDark ? '#A78BFA' : '#8B5CF6';
+  const divColor       = isDark ? '#FB923C' : '#F97316';
+  const totalColor     = isTotalNeg ? '#F04452' : (isDark ? '#4ECDC4' : '#00B493');
   const textColor      = isDark ? '#A8B3C1' : '#6B7684';
   const gridColor      = isDark ? 'rgba(42,47,62,.7)' : 'rgba(229,232,235,.8)';
 
@@ -233,15 +266,21 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
 
   /* ── 데이터 ── */
   const principalData = points.map((p) => p.principal);
-  const evalData      = points.map((p) => p.principal + p.cumulativePL);
+  const plData        = points.map((p) => p.cumulativePL);
+  const divData       = points.map((p) => p.cumulativeDiv);
+  const totalData     = points.map((p) => p.principal + p.cumulativePL + p.cumulativeDiv);
   const dotRadius     = points.length > 24 ? 0 : 3;
 
   // Update ref synchronously so the plugin reads fresh values on the next draw
   lastFmtRef.current = {
-    evalLabel:      fmtAbs(evalData[evalData.length - 1]),
-    evalColor:      plColor,
     principalLabel: fmtAbs(principalData[principalData.length - 1]),
     principalColor: principalColor,
+    plLabel:        fmtAbs(plData[plData.length - 1]),
+    plColor:        plColor,
+    divLabel:       fmtAbs(divData[divData.length - 1]),
+    divColor:       divColor,
+    totalLabel:     fmtAbs(totalData[totalData.length - 1]),
+    totalColor:     totalColor,
     dark:           isDark,
   };
 
@@ -263,17 +302,43 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
         pointHoverRadius: 5,
         fill: true,
         tension: 0.35,
+        order: 4,
+      },
+      {
+        label: '실현손익',
+        data: plData,
+        borderColor: plColor,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: (ctx: { dataIndex: number }) =>
+          ctx.dataIndex === plData.length - 1 ? 0 : dotRadius,
+        pointHoverRadius: 5,
+        fill: false,
+        tension: 0.35,
+        order: 3,
+      },
+      {
+        label: '배당금',
+        data: divData,
+        borderColor: divColor,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: (ctx: { dataIndex: number }) =>
+          ctx.dataIndex === divData.length - 1 ? 0 : dotRadius,
+        pointHoverRadius: 5,
+        fill: false,
+        tension: 0.35,
         order: 2,
       },
       {
-        label: '누적 실현금액',
-        data: evalData,
-        borderColor: plColor,
+        label: '전체',
+        data: totalData,
+        borderColor: totalColor,
         backgroundColor: 'transparent',
         borderWidth: 2.5,
         // Plugin draws a custom dot for the last point; suppress chart.js's dot there
         pointRadius: (ctx: { dataIndex: number }) =>
-          ctx.dataIndex === evalData.length - 1 ? 0 : dotRadius,
+          ctx.dataIndex === totalData.length - 1 ? 0 : dotRadius,
         pointHoverRadius: 5,
         fill: false,
         tension: 0.35,
@@ -295,17 +360,13 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
             if (item.datasetIndex === 0) {
               return ` 원금: ${fmtAbs(v)}`;
             }
-            const idx     = item.dataIndex;
-            const princ   = principalData[idx];
-            const pl      = v - princ;
-            const rate    = princ > 0 ? (pl / princ) * 100 : null;
-            const rateStr = rate !== null
-              ? ` (${rate >= 0 ? '+' : ''}${rate.toFixed(2)}%)`
-              : '';
-            return [
-              ` 누적 실현금액: ${fmtAbs(v)}`,
-              ` 손  익: ${fmtSigned(pl)}${rateStr}`,
-            ];
+            if (item.datasetIndex === 1) {
+              return ` 실현손익: ${fmtSigned(v)}`;
+            }
+            if (item.datasetIndex === 2) {
+              return ` 배당금: ${fmtSigned(v)}`;
+            }
+            return ` 전체: ${fmtAbs(v)}`;
           },
         },
         backgroundColor: isDark ? '#252836' : '#fff',
@@ -318,7 +379,7 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
         boxPadding: 4,
       },
     },
-    layout: { padding: { left: 4, bottom: 28, right: 8 } },
+    layout: { padding: { left: 4, bottom: 28, right: 110 } },
     scales: {
       x: {
         ticks: {
@@ -332,14 +393,6 @@ export function PrincipalPLLineChart({ entries, market, isDark = false }: Props)
         border: { color: gridColor },
       },
       y: {
-        afterBuildTicks(scale) {
-          if (scale.ticks.length < 2) return;
-          const step = scale.ticks[1].value - scale.ticks[0].value;
-          const lastVal = scale.ticks[scale.ticks.length - 1].value;
-          scale.ticks.push({ value: lastVal + step, label: '' });
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (scale as unknown as any).max = lastVal + step;
-        },
         ticks: {
           color: textColor,
           font: { size: 11, family: 'Pretendard, sans-serif' },
