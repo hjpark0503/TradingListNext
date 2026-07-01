@@ -704,7 +704,9 @@ select.inp {
 .card .value {
   font-family:'Pretendard',sans-serif; font-size:1.6rem; font-weight:700;
   letter-spacing:-.02em; color:var(--text-primary); margin-bottom:6px; line-height:1.2;
-  white-space: nowrap; overflow: hidden;
+  /* 값 뒤에 수익률 배지(.pl-rate-inline)가 붙는 카드가 있어, 폭이 좁으면
+     특정 breakpoint에 의존하지 않고 자동으로 다음 줄로 줄바꿈되게 함 */
+  display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 6px; row-gap: 2px;
 }
 .card .note {
   font-size:.80rem; color:var(--text-secondary); white-space:nowrap;
@@ -1042,11 +1044,10 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 .pl-neg { color:var(--gain) !important; font-weight:600; }
 .pl-na  { color:var(--text-muted); }
 
-/* 실현손익 카드 인라인 수익률 */
+/* 실현손익 카드 인라인 수익률 (부모 .card .value가 flex이므로 gap으로 간격 처리) */
 .pl-rate-inline {
   font-size: 1.0rem;
   font-weight: 600;
-  margin-left: 5px;
   letter-spacing: -.01em;
   opacity: .9;
 }
@@ -1367,11 +1368,8 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   .card   { padding:16px 14px; border-radius:var(--r-lg); }
   .card .value { font-size:1.1rem; }
   .card .label { font-size:.72rem; }
-  /* 좁은 카드에서 수익률이 잘리지 않도록 줄바꿈 */
-  .card-pl .value,
-  .portfolio-summary-cards .value { white-space:normal; }
   .card-pl .pl-rate-inline,
-  .portfolio-summary-cards .pl-rate-inline { display:block; margin-left:0; margin-top:2px; font-size:.82rem; }
+  .portfolio-summary-cards .pl-rate-inline { font-size:.82rem; }
   /* 차트 */
   .chart-wrap--tall { height:180px; }
   /* 탭 & 테이블 */
