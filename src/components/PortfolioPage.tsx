@@ -9,6 +9,14 @@ import { TradeTypeDonutChart } from './TradeTypeDonutChart';
 import { HoldingsList, calcHoldings, isETF, type HoldingFilter } from './HoldingsList';
 import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
 
+function valueSize(val: string): string {
+  const n = val.length;
+  if (n <= 8)  return '1.3rem';
+  if (n <= 11) return '1.25rem';
+  if (n <= 14) return '1.0rem';
+  return '0.875rem';
+}
+
 export default function PortfolioPage() {
   const { state, switchMarket, loadEntries } = useDashboard();
   const { isDark, toggle: toggleDark } = useDarkMode();
@@ -52,6 +60,14 @@ export default function PortfolioPage() {
       return sum + cp * h.qty;
     }, 0);
   }, [allHoldings, holdingPrices, pricesFetched]);
+
+  const stockCostBasis = useMemo(
+    () => allHoldings.reduce((sum, h) => sum + h.avgPrice * h.qty, 0),
+    [allHoldings]
+  );
+  const stockPL = stockValue - stockCostBasis;
+  const stockReturnRate = pricesFetched && stockCostBasis > 0 ? (stockPL / stockCostBasis) * 100 : null;
+  const stockPLClass = stockReturnRate == null || stockPL === 0 ? '' : stockPL > 0 ? 'pl-pos' : 'pl-neg';
 
   const totalAssets = depositBalance + stockValue;
 
@@ -147,15 +163,20 @@ export default function PortfolioPage() {
             <div className="portfolio-summary-cards">
               <div className="card card-stat">
                 <div className="label">총 자산</div>
-                <div className="value">{fmt(totalAssets)}</div>
+                <div className="value" style={{ fontSize: valueSize(fmt(totalAssets)) }}>{fmt(totalAssets)}</div>
               </div>
               <div className="card card-stat">
                 <div className="label">주식 평가금액</div>
-                <div className="value">{fmt(stockValue)}</div>
+                <div className={`value ${stockPLClass}`} style={{ fontSize: valueSize(fmt(stockValue)) }}>
+                  {fmt(stockValue)}
+                  {stockReturnRate != null && (
+                    <span className="pl-rate-inline">({stockReturnRate >= 0 ? '+' : ''}{stockReturnRate.toFixed(2)}%)</span>
+                  )}
+                </div>
               </div>
               <div className="card card-stat">
                 <div className="label">현금</div>
-                <div className="value">{fmt(depositBalance)}</div>
+                <div className="value" style={{ fontSize: valueSize(fmt(depositBalance)) }}>{fmt(depositBalance)}</div>
               </div>
             </div>
 
