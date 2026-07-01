@@ -9,6 +9,11 @@ const ETF_PREFIXES = [
   'KODEX', 'TIGER', 'KINDEX', 'HANARO', 'ARIRANG', 'KOSEF', 'KBSTAR', 'ACE',
   'TIMEFOLIO', 'PLUS', 'SOL', 'WON', 'KOACT', '1Q', 'FOCUS', '마이티', '히어로즈',
   'POWER', '파워', '마이다스', '트러스톤', 'SMART',
+  // 해외 ETF 발행사 (이름에 "ETF"가 없는 경우가 많음, 예: "Invesco QQQ Trust, Series 1")
+  'ISHARES', 'SPDR', 'VANGUARD', 'PROSHARES', 'INVESCO', 'DIREXION', 'GLOBAL X',
+  'ARK', 'XTRACKERS', 'WISDOMTREE', 'SCHWAB', 'FIRST TRUST', 'VANECK', 'JPMORGAN',
+  'SIMPLIFY', 'GRANITESHARES', 'AMPLIFY', 'ROUNDHILL', 'YIELDMAX', 'DEFIANCE',
+  'FIDELITY', 'STATE STREET',
 ];
 
 export function isETF(name: string): boolean {

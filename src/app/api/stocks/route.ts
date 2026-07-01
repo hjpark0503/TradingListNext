@@ -93,7 +93,9 @@ async function searchOverseas(query: string): Promise<StockResult[]> {
   const quotes: YahooQuote[] = Array.isArray(data?.quotes) ? data.quotes : [];
 
   return quotes
-    .filter((q) => q.quoteType === 'EQUITY' && q.exchange in US_EXCHANGES)
+    .filter(
+      (q) => (q.quoteType === 'EQUITY' || q.quoteType === 'ETF') && q.exchange in US_EXCHANGES
+    )
     .map((q) => ({
       name: q.shortname ?? q.longname ?? q.symbol,
       code: q.symbol,

@@ -35,10 +35,9 @@ async function fetchDomesticPrice(code: string): Promise<PriceResult | null> {
   };
 }
 
-async function fetchOverseasPrice(symbol: string): Promise<PriceResult | null> {
-  // NASDAQ 공식 API (인증 불필요, 지연 시세)
+async function fetchNasdaqQuote(symbol: string, assetclass: 'stocks' | 'etf') {
   const res = await fetch(
-    `https://api.nasdaq.com/api/quote/${encodeURIComponent(symbol.toUpperCase())}/info?assetclass=stocks`,
+    `https://api.nasdaq.com/api/quote/${encodeURIComponent(symbol.toUpperCase())}/info?assetclass=${assetclass}`,
     {
       headers: {
         'User-Agent':
@@ -50,6 +49,18 @@ async function fetchOverseasPrice(symbol: string): Promise<PriceResult | null> {
   if (!res.ok) return null;
 
   const data = await res.json();
+  const raw = data?.data?.primaryData?.lastSalePrice as string | undefined;
+  if (!raw) return null;
+  return data;
+}
+
+async function fetchOverseasPrice(symbol: string): Promise<PriceResult | null> {
+  // NASDAQ 공식 API (인증 불필요, 지연 시세)
+  // 일반 주식은 assetclass=stocks, ETF는 assetclass=etf로 조회해야 함
+  const data =
+    (await fetchNasdaqQuote(symbol, 'stocks')) ?? (await fetchNasdaqQuote(symbol, 'etf'));
+  if (!data) return null;
+
   const raw = data?.data?.primaryData?.lastSalePrice as string | undefined;
   if (!raw) return null;
 
