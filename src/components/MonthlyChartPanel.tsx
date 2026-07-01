@@ -90,7 +90,7 @@ export function MonthlyChartPanel({ entries, market, isDark, year: externalYear 
   return (
     <div className="apl-panel">
       <div className="apl-header">
-        <span className="apl-title">월별 손익</span>
+        <span className="apl-title">월별 성과</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div className="rpl-seg">
             {TABS.map((t) => (

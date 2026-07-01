@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import type { Entry, Market } from '@/lib/types';
-import { calcPLByDate, calcPLByStock, calcRealizedPL } from '@/lib/calculations';
+import { calcPLByDate, calcPLByStock } from '@/lib/calculations';
 import { formatUsd } from '@/lib/utils';
 import { MonthlyBarChart, type MonthData } from './MonthlyBarChart';
 
@@ -99,12 +99,6 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
   // 원가(이동평균)는 전체 이력으로 계산하고, 표시는 선택 연도 매도만 거른다.
   const byDate  = useMemo(() => calcPLByDate(entries, currentYear),   [entries, currentYear]);
   const byStock = useMemo(() => calcPLByStock(entries, currentYear),  [entries, currentYear]);
-  const total   = useMemo(() => calcRealizedPL(entries, currentYear), [entries, currentYear]);
-
-  const winningStocks       = byStock.filter((r) => !r.hasIncompleteData && r.totalPL > 0).length;
-  const totalStocksWithData = byStock.filter((r) => !r.hasIncompleteData).length;
-  const winRate             = totalStocksWithData > 0 ? Math.round((winningStocks / totalStocksWithData) * 100) : null;
-  const totalSellCount      = byDate.reduce((s, r) => s + r.details.length, 0);
 
   const sortedByDate = [...byDate].sort((a, b) => {
     const mul = dateSort.dir === 'asc' ? 1 : -1;
@@ -171,7 +165,7 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
       {showList && (
         <div className="apl-panel">
           <div className="apl-header">
-            <span className="apl-title">상세 실현손익</span>
+            <span className="apl-title">실현손익 내역</span>
             {years.length > 0 && (
               <div className="rpl-seg">
                 {TABS.map((t) => (
@@ -293,39 +287,6 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
                         })}
                       </>
                 )}
-              </div>
-
-              {/* ── 푸터 ── */}
-              <div className="rpl-footer">
-                <div className="rpl-footer__pl-wrap">
-                  <span className={`rpl-footer__pl ${plCls(total.totalPL)}`}>{fmtPL(total.totalPL)}</span>
-                  <span className="rpl-footer__pl-label">총 실현손익</span>
-                </div>
-                <div className="rpl-footer__stats">
-                  <div className="rpl-footer__stat">
-                    <span className="rpl-footer__stat-label">매도</span>
-                    <span className="rpl-footer__stat-val">{totalSellCount}건</span>
-                  </div>
-                  {winRate !== null && (
-                    <>
-                      <span className="rpl-footer__sep" />
-                      <div className="rpl-footer__stat">
-                        <span className="rpl-footer__stat-label">수익 종목</span>
-                        <span className="rpl-footer__stat-val">{winningStocks}/{totalStocksWithData}</span>
-                      </div>
-                      <span className="rpl-footer__sep" />
-                      <div className="rpl-footer__stat">
-                        <span className="rpl-footer__stat-label">승률</span>
-                        <span className={`rpl-footer__stat-val${winRate >= 50 ? ' rpl-footer__stat-val--pos' : ' rpl-footer__stat-val--neg'}`}>
-                          {winRate}%
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  {total.hasIncompleteData && (
-                    <span className="rpl-kpi__warn" style={{ marginLeft: 'auto' }}>⚠ 일부 누락</span>
-                  )}
-                </div>
               </div>
             </>
           )}

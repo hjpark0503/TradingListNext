@@ -64,7 +64,7 @@ export function PLPeriodFloatingList({ entries, market, selectedYear }: Props) {
   return (
     <div className="rpl-panel plfl-panel">
       <div className="rpl-header">
-        <span className="rpl-title">기간별 실현손익</span>
+        <span className="rpl-title">실현손익 요약</span>
       </div>
 
       {!hasSells ? (
