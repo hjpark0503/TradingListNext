@@ -9,6 +9,7 @@ interface Props {
   market: Market;
   selectedYear?: string;
   metric?: 'realized' | 'dividend';
+  showHeader?: boolean;
 }
 
 function hasData(item: { pl: number; buyCost: number; hasIncompleteData: boolean }) {
@@ -29,11 +30,10 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-export function PLPeriodFloatingList({ entries, market, selectedYear, metric = 'realized' }: Props) {
+export function PLPeriodFloatingList({ entries, market, selectedYear, metric = 'realized', showHeader = true }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const title     = metric === 'dividend' ? '배당수익 요약' : '실현손익 요약';
   const emptyText = metric === 'dividend' ? '배당 내역이 없습니다.' : '매도 내역이 없습니다.';
-  const plLabel   = metric === 'dividend' ? '배당금' : '실현손익';
   const data = useMemo(() => {
     const all = metric === 'dividend' ? calcDividendPeriodTable(entries) : calcPLPeriodTable(entries);
     if (!selectedYear || selectedYear === '전체') return all;
@@ -70,18 +70,16 @@ export function PLPeriodFloatingList({ entries, market, selectedYear, metric = '
 
   return (
     <div className={`rpl-panel plfl-panel${metric === 'dividend' ? ' plfl-panel--dividend' : ''}`}>
-      <div className="rpl-header">
-        <span className="rpl-title">{title}</span>
-      </div>
+      {showHeader && (
+        <div className="rpl-header">
+          <span className="rpl-title">{title}</span>
+        </div>
+      )}
 
       {!hasSells ? (
         <div className="panel-empty">{emptyText}</div>
       ) : (
         <div className="rpl-list-col">
-          <div className="rpl-col-header">
-            <span className="rpl-col-label">기간</span>
-            <span className="rpl-col-label rpl-col-label--right">{plLabel}</span>
-          </div>
           {data.map((year) => {
             const yHasData  = hasData(year);
             const yExpanded = expanded.has(year.label);

@@ -165,7 +165,7 @@ export function RealizedPLChart({ entries, market, isDark, year: externalYear, v
       {showList && (
         <div className="apl-panel">
           <div className="apl-header">
-            <span className="apl-title">실현손익 내역</span>
+            <span className="apl-title">상세 내역</span>
             {years.length > 0 && (
               <div className="rpl-seg">
                 {TABS.map((t) => (

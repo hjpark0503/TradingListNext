@@ -23,6 +23,15 @@ function valueSize(val: string): string {
   return '0.875rem';
 }
 
+// 총 실현손익은 대시보드의 핵심 지표이므로 눈에 띄게 크게 표시
+function heroValueSize(val: string): string {
+  const n = val.length;
+  if (n <= 8)  return '2.25rem';
+  if (n <= 11) return '1.9rem';
+  if (n <= 14) return '1.5rem';
+  return '1.1rem';
+}
+
 export default function Dashboard() {
   const { state, setExchangeRate, switchMarket, loadEntries } = useDashboard();
   const { isDark, toggle: toggleDark } = useDarkMode();
@@ -31,6 +40,7 @@ export default function Dashboard() {
   const marketEntries = entries.filter((e) => e.market === currentMarket);
 
   const [selectedYear, setSelectedYear] = useState<string>('전체');
+  const [plTab, setPlTab] = useState<'realized' | 'dividend'>('realized');
   const years = ['전체', ...Array.from(
     new Set(marketEntries.map((e) => e.date?.slice(0, 4)).filter(Boolean))
   ).sort((a, b) => Number(b) - Number(a))];
@@ -173,12 +183,12 @@ export default function Dashboard() {
 
             <div className="summary-grid summary-grid--stats">
               <div
-                className="card card-pl"
-                style={{ cursor: 'pointer', gridColumn: 'span 1' }}
+                className="card card-pl card-pl--hero"
+                style={{ cursor: 'pointer', gridColumn: '1 / -1' }}
                 onClick={() => plPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               >
                 <div className="label">{selectedYear === '전체' ? '총 실현손익' : '실현손익'}</div>
-                <div className={`value ${plCardColor()}`} style={{ fontSize: valueSize(plCardValue()) }}>
+                <div className={`value ${plCardColor()}`} style={{ fontSize: heroValueSize(plCardValue()) }}>
                   {plCardValue()}
                   {returnRateValue() !== '—' && (
                     <span className="pl-rate-inline">({returnRateValue()})</span>
@@ -236,26 +246,46 @@ export default function Dashboard() {
             {/* 투자 성과 추이 — 전체 너비로 상단 배치 */}
             <PrincipalPLLineChart key={`${currentMarket}-${selectedYear}`} entries={filteredEntries} market={currentMarket} isDark={isDark} />
 
-            <div className="pl-charts-row" ref={plPanelRef}>
-              <div className="pl-detail-stack">
-                <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} metric="realized" />
-                <RealizedPLChart
-                  key={`list-${currentMarket}`}
-                  entries={marketEntries}
-                  market={currentMarket}
-                  isDark={isDark}
-                  year={selectedYear === '전체' ? plChartYears[0] : selectedYear}
-                  view="list"
-                />
+            <div className="pl-detail-stack" ref={plPanelRef}>
+              <div className="tab-bar">
+                <button
+                  type="button"
+                  className={`tab-btn${plTab === 'realized' ? ' active' : ''}`}
+                  onClick={() => setPlTab('realized')}
+                >
+                  실현손익
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn${plTab === 'dividend' ? ' active' : ''}`}
+                  onClick={() => setPlTab('dividend')}
+                >
+                  배당수익
+                </button>
               </div>
-              <div className="pl-detail-stack">
-                <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} metric="dividend" />
-                <DividendDetailPanel
-                  entries={marketEntries}
-                  market={currentMarket}
-                  year={selectedYear === '전체' ? divChartYears[0] : selectedYear}
-                />
-              </div>
+
+              {plTab === 'realized' ? (
+                <>
+                  <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} metric="realized" showHeader={false} />
+                  <RealizedPLChart
+                    key={`list-${currentMarket}`}
+                    entries={marketEntries}
+                    market={currentMarket}
+                    isDark={isDark}
+                    year={selectedYear === '전체' ? plChartYears[0] : selectedYear}
+                    view="list"
+                  />
+                </>
+              ) : (
+                <>
+                  <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} metric="dividend" showHeader={false} />
+                  <DividendDetailPanel
+                    entries={marketEntries}
+                    market={currentMarket}
+                    year={selectedYear === '전체' ? divChartYears[0] : selectedYear}
+                  />
+                </>
+              )}
             </div>
 
             {currentMarket === 'overseas' && (

@@ -85,7 +85,7 @@ export function DividendDetailPanel({ entries, market, year }: Props) {
   return (
     <div className="apl-panel apl-panel--dividend">
       <div className="apl-header">
-        <span className="apl-title">배당수익 내역</span>
+        <span className="apl-title">상세 내역</span>
         {byDate.length > 0 && (
           <div className="rpl-seg">
             {TABS.map((t) => (
