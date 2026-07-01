@@ -13,6 +13,7 @@ import { RealizedPLChart } from './RealizedPLChart';
 import { PrincipalPLLineChart } from './PrincipalPLLineChart';
 import { NoticeTicker } from './NoticeTicker';
 import { PLPeriodFloatingList } from './PLPeriodFloatingList';
+import { DividendDetailPanel } from './DividendDetailPanel';
 
 function valueSize(val: string): string {
   const n = val.length;
@@ -65,6 +66,10 @@ export default function Dashboard() {
 
   const plChartYears = useMemo(() =>
     Array.from(new Set(marketEntries.filter((e) => e.type === 'sell').map((e) => e.date?.slice(0, 4)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
+    [marketEntries]
+  );
+  const divChartYears = useMemo(() =>
+    Array.from(new Set(marketEntries.filter((e) => e.type === 'div').map((e) => e.date?.slice(0, 4)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
     [marketEntries]
   );
 
@@ -232,15 +237,25 @@ export default function Dashboard() {
             <PrincipalPLLineChart key={`${currentMarket}-${selectedYear}`} entries={filteredEntries} market={currentMarket} isDark={isDark} />
 
             <div className="pl-charts-row" ref={plPanelRef}>
-              <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} />
-              <RealizedPLChart
-                key={`list-${currentMarket}`}
-                entries={marketEntries}
-                market={currentMarket}
-                isDark={isDark}
-                year={selectedYear === '전체' ? plChartYears[0] : selectedYear}
-                view="list"
-              />
+              <div className="pl-detail-stack">
+                <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} metric="realized" />
+                <RealizedPLChart
+                  key={`list-${currentMarket}`}
+                  entries={marketEntries}
+                  market={currentMarket}
+                  isDark={isDark}
+                  year={selectedYear === '전체' ? plChartYears[0] : selectedYear}
+                  view="list"
+                />
+              </div>
+              <div className="pl-detail-stack">
+                <PLPeriodFloatingList entries={marketEntries} market={currentMarket} selectedYear={selectedYear} metric="dividend" />
+                <DividendDetailPanel
+                  entries={marketEntries}
+                  market={currentMarket}
+                  year={selectedYear === '전체' ? divChartYears[0] : selectedYear}
+                />
+              </div>
             </div>
 
             {currentMarket === 'overseas' && (

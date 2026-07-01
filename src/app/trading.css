@@ -539,8 +539,15 @@ select.inp {
 .pl-charts-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
+  gap: 24px;
   align-items: start;
+}
+
+/* 같은 카테고리(실현손익/배당)의 요약·내역을 좁은 간격으로 묶어 하나의 그룹처럼 보이게 함 */
+.pl-detail-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1932,6 +1939,13 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 [data-theme="dark"] .rpl-col-header       { background: var(--bg-surface); }
 [data-theme="dark"] .rpl-footer           { background: rgba(0,0,0,.12); }
 
+/* ── 카테고리 강조: 요약 카드는 왼쪽에 굵은 색 띠로 구분 (실현손익=브랜드, 배당=오렌지) ── */
+.plfl-panel             { border-left: 4px solid var(--brand); }
+.plfl-panel--dividend   { border-left-color: var(--div-color); }
+
+/* 배당 금액은 손익(빨강/파랑)이 아니라 배당 전용 색으로 표시 */
+.pl-div { color: var(--div-color) !important; }
+
 /* ══════════════════════════════════════════════════════════════════
    19-A. PRINCIPAL / PL LINE CHART
    ══════════════════════════════════════════════════════════════════ */
@@ -2219,15 +2233,21 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
    20. ANNUAL PL CHART (연도별 실현손익)
    ══════════════════════════════════════════════════════════════════ */
 
+/* 내역(detail) 리스트는 요약 카드보다 톤을 낮춰 "부요소"로 읽히게 함 */
 .apl-panel {
-  background: var(--bg-surface);
+  background: var(--bg-base);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--brand);
   border-radius: var(--r-xl);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   overflow: hidden;
   animation: fadeUp .2s ease both;
   margin-bottom: 0;
 }
+.apl-panel--dividend { border-left-color: var(--div-color); }
+
+.apl-panel .rpl-col-header { background: var(--bg-base); }
+.apl-panel .rpl-children   { background: var(--bg-surface); }
 
 .apl-header {
   display: flex;

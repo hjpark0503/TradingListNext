@@ -285,6 +285,71 @@ export function calcPLByStock(entries: Entry[], sellYear?: string): PLByStockRow
   return rows.sort((a, b) => b.totalPL - a.totalPL);
 }
 
+export interface DivByDateDetail {
+  stock: string;
+  amount: number;
+}
+
+export interface DivByDateRow {
+  date: string;
+  total: number;
+  details: DivByDateDetail[];
+}
+
+export interface DivByStockDetail {
+  date: string;
+  amount: number;
+}
+
+export interface DivByStockRow {
+  stock: string;
+  total: number;
+  details: DivByStockDetail[];
+}
+
+export function calcDivByDate(entries: Entry[], divYear?: string): DivByDateRow[] {
+  const divs = entries.filter((e) => e.type === 'div' && (!divYear || e.date.startsWith(divYear)));
+  if (divs.length === 0) return [];
+
+  const dateMap: Record<string, Record<string, { amount: number; label: string }>> = {};
+  for (const d of divs) {
+    const key = d.stock.trim().toUpperCase();
+    if (!dateMap[d.date]) dateMap[d.date] = {};
+    if (!dateMap[d.date][key]) dateMap[d.date][key] = { amount: 0, label: d.stock.trim() };
+    dateMap[d.date][key].amount += d.settlement;
+  }
+
+  return Object.entries(dateMap)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, stockMap]) => {
+      const details = Object.values(stockMap).map((g) => ({ stock: g.label, amount: g.amount }));
+      const total = details.reduce((s, d) => s + d.amount, 0);
+      return { date, total, details };
+    });
+}
+
+export function calcDivByStock(entries: Entry[], divYear?: string): DivByStockRow[] {
+  const divs = entries.filter((e) => e.type === 'div' && (!divYear || e.date.startsWith(divYear)));
+  if (divs.length === 0) return [];
+
+  const stockMap: Record<string, { label: string; dateMap: Record<string, number> }> = {};
+  for (const d of divs) {
+    const key = d.stock.trim().toUpperCase();
+    if (!stockMap[key]) stockMap[key] = { label: d.stock.trim(), dateMap: {} };
+    stockMap[key].dateMap[d.date] = (stockMap[key].dateMap[d.date] ?? 0) + d.settlement;
+  }
+
+  const rows = Object.values(stockMap).map(({ label, dateMap }) => {
+    const details = Object.entries(dateMap)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([date, amount]) => ({ date, amount }));
+    const total = details.reduce((s, d) => s + d.amount, 0);
+    return { stock: label, total, details };
+  });
+
+  return rows.sort((a, b) => b.total - a.total);
+}
+
 export interface PLPeriodRow {
   label: string;
   pl: number;
@@ -383,6 +448,54 @@ export function calcPLPeriodTable(entries: Entry[]): YearPLItem[] {
       pl: halves.reduce((s, h) => s + h.pl, 0),
       buyCost: halves.reduce((s, h) => s + h.buyCost, 0),
       hasIncompleteData: halves.some((h) => h.hasIncompleteData),
+      halves,
+    };
+  });
+}
+
+export function calcDividendPeriodTable(entries: Entry[]): YearPLItem[] {
+  const divEntries = entries.filter((e) => e.type === 'div');
+  if (divEntries.length === 0) return [];
+
+  const divMap = new Map<string, number>();
+  for (const e of divEntries) {
+    const key = e.date.slice(0, 7);
+    divMap.set(key, (divMap.get(key) ?? 0) + e.settlement);
+  }
+
+  const years = Array.from(new Set(divEntries.map((e) => e.date?.slice(0, 4)).filter(Boolean)))
+    .sort((a, b) => b.localeCompare(a));
+
+  return years.map((yearLabel) => {
+    const halves: HalfPLItem[] = ['상반기', '하반기'].map((halfLabel, hi) => {
+      const quarters: QuarterPLItem[] = [1, 2].map((qIdx) => {
+        const qNum = hi * 2 + qIdx;
+        const qMonths = [1, 2, 3].map((offset) => (qNum - 1) * 3 + offset);
+        const months: MonthPLItem[] = qMonths.map((mn) => {
+          const key = `${yearLabel}-${String(mn).padStart(2, '0')}`;
+          return { key, pl: divMap.get(key) ?? 0, buyCost: 0, hasIncompleteData: false };
+        });
+        return {
+          label: `${qNum}분기`,
+          pl: months.reduce((s, m) => s + m.pl, 0),
+          buyCost: 0,
+          hasIncompleteData: false,
+          months,
+        };
+      });
+      return {
+        label: halfLabel,
+        pl: quarters.reduce((s, q) => s + q.pl, 0),
+        buyCost: 0,
+        hasIncompleteData: false,
+        quarters,
+      };
+    });
+    return {
+      label: yearLabel,
+      pl: halves.reduce((s, h) => s + h.pl, 0),
+      buyCost: 0,
+      hasIncompleteData: false,
       halves,
     };
   });

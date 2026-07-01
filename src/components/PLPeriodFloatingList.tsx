@@ -1,13 +1,14 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { Entry, Market } from '@/lib/types';
-import { calcPLPeriodTable } from '@/lib/calculations';
+import { calcPLPeriodTable, calcDividendPeriodTable } from '@/lib/calculations';
 import { formatUsd } from '@/lib/utils';
 
 interface Props {
   entries: Entry[];
   market: Market;
   selectedYear?: string;
+  metric?: 'realized' | 'dividend';
 }
 
 function hasData(item: { pl: number; buyCost: number; hasIncompleteData: boolean }) {
@@ -28,13 +29,16 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-export function PLPeriodFloatingList({ entries, market, selectedYear }: Props) {
+export function PLPeriodFloatingList({ entries, market, selectedYear, metric = 'realized' }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const title     = metric === 'dividend' ? '배당수익 요약' : '실현손익 요약';
+  const emptyText = metric === 'dividend' ? '배당 내역이 없습니다.' : '매도 내역이 없습니다.';
+  const plLabel   = metric === 'dividend' ? '배당금' : '실현손익';
   const data = useMemo(() => {
-    const all = calcPLPeriodTable(entries);
+    const all = metric === 'dividend' ? calcDividendPeriodTable(entries) : calcPLPeriodTable(entries);
     if (!selectedYear || selectedYear === '전체') return all;
     return all.filter((y) => y.label === selectedYear);
-  }, [entries, selectedYear]);
+  }, [entries, selectedYear, metric]);
 
   function toggle(key: string) {
     setExpanded((prev) => {
@@ -57,23 +61,26 @@ export function PLPeriodFloatingList({ entries, market, selectedYear }: Props) {
     return `${r >= 0 ? '+' : ''}${r.toFixed(1)}%`;
   }
 
-  function plCls(n: number) { return n >= 0 ? 'pl-pos' : 'pl-neg'; }
+  function plCls(n: number) {
+    if (metric === 'dividend') return 'pl-div';
+    return n >= 0 ? 'pl-pos' : 'pl-neg';
+  }
 
   const hasSells = data.some((y) => hasData(y));
 
   return (
-    <div className="rpl-panel plfl-panel">
+    <div className={`rpl-panel plfl-panel${metric === 'dividend' ? ' plfl-panel--dividend' : ''}`}>
       <div className="rpl-header">
-        <span className="rpl-title">실현손익 요약</span>
+        <span className="rpl-title">{title}</span>
       </div>
 
       {!hasSells ? (
-        <div className="panel-empty">매도 내역이 없습니다.</div>
+        <div className="panel-empty">{emptyText}</div>
       ) : (
         <div className="rpl-list-col">
           <div className="rpl-col-header">
             <span className="rpl-col-label">기간</span>
-            <span className="rpl-col-label rpl-col-label--right">실현손익</span>
+            <span className="rpl-col-label rpl-col-label--right">{plLabel}</span>
           </div>
           {data.map((year) => {
             const yHasData  = hasData(year);
