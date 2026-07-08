@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
 import { DashboardProvider } from "@/context/DashboardContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "영차영차 주식 거래일지",
@@ -21,10 +22,12 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <DashboardProvider>
-          {children}
-          <BottomNav />
-        </DashboardProvider>
+        <AuthProvider>
+          <DashboardProvider>
+            {children}
+            <BottomNav />
+          </DashboardProvider>
+        </AuthProvider>
       </body>
     </html>
   );

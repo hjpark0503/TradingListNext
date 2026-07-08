@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import { Market } from '@/lib/types';
+import { UserButton } from './UserButton';
 
 interface HeaderProps {
   onExport: () => void;
@@ -51,6 +52,7 @@ export function Header({ onExport, onImport, hasEntries, currentMarket, onMarket
   return (
     <div className="header">
       <div className="header-left">
+        <UserButton />
         <button
           type="button"
           className="btn-dark-toggle"

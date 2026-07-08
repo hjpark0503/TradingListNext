@@ -1,4 +1,9 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    }
+  },
   "hosting": {
     "site": "tradinglist-2026",
     "public": "out",
