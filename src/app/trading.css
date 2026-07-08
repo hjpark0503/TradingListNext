@@ -2673,6 +2673,57 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   color: var(--text-primary);
 }
 
+.login-hint {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  z-index: 250;
+  width: max-content;
+  max-width: 240px;
+  padding: 10px 26px 10px 12px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: var(--r-md);
+  font-size: .76rem;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  animation: fadeUp .3s ease;
+}
+
+.login-hint::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 14px;
+  width: 10px;
+  height: 10px;
+  background: var(--brand);
+  transform: rotate(45deg);
+}
+
+.login-hint p { margin: 0; }
+
+.login-hint__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  color: rgba(255,255,255,.8);
+  font-size: .62rem;
+}
+
+.login-hint__close:hover {
+  background: rgba(255,255,255,.2);
+  color: #fff;
+}
+
 .auth-modal-backdrop {
   position: fixed;
   inset: 0;

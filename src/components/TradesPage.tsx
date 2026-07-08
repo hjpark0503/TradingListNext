@@ -4,12 +4,13 @@ import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import { useExcelImport } from '@/hooks/useExcelImport';
 import { Header } from './Header';
 import { NoticeTicker } from './NoticeTicker';
 import { TradeForm } from './TradeForm';
 import { EntryTable } from './EntryTable';
 import { Market, TradeType } from '@/lib/types';
-import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
+import { exportEntriesToExcel } from '@/lib/excel';
 import { fmtUsd, fmtKrw } from '@/lib/utils';
 
 const TRADE_CARDS = [
@@ -121,17 +122,11 @@ export default function TradesPage() {
 
   const handleExport = () => exportEntriesToExcel(entries);
 
-  const handleImport = async (file: File) => {
-    try {
-      const imported = await importEntriesFromExcel(file);
-      loadEntries(imported);
-      setIsSelectMode(false);
-      setSelectedIds(new Set());
-      setShowDeleteConfirm(false);
-    } catch (e) {
-      alert('엑셀 파일을 읽는 중 오류가 발생했습니다: ' + ((e as Error)?.message ?? String(e)));
-    }
-  };
+  const { handleImport, importConfirmModal } = useExcelImport(entries, loadEntries, () => {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+    setShowDeleteConfirm(false);
+  });
 
   const deleteConfirmModal = showDeleteConfirm ? createPortal(
     <div className="confirm-overlay" onClick={handleDeleteCancel}>
@@ -160,6 +155,7 @@ export default function TradesPage() {
   return (
     <div>
       {deleteConfirmModal}
+      {importConfirmModal}
       <Header
         onExport={handleExport}
         onImport={handleImport}

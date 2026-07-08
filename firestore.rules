@@ -1,0 +1,95 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users/{userId}/entries
+    // Document ID: string form of the numeric `id` field (e.g. "1732500000000")
+    // Fields:
+    //   - id: number (required, immutable) - unique entry id, matches doc id
+    //   - date: string (required, <= 20 chars) - trade date, e.g. "2026-07-08"
+    //   - type: string (required, enum: buy|sell|deposit|withdraw|div)
+    //   - market: string (required, enum: overseas|domestic)
+    //   - stock: string (required, <= 100 chars, may be empty for deposit/withdraw)
+    //   - detail: string (required, <= 500 chars, may be empty)
+    //   - qty: number (required)
+    //   - price: number (required)
+    //   - fee: number (required)
+    //   - tax: number (required)
+    //   - amount: number (required)
+    //   - settlement: number (required)
+    //
+    // Only the document owner (request.auth.uid == userId) may read or write
+    // their own entries. No other collections are used by this app.
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function entryFields() {
+      return ['id', 'date', 'type', 'market', 'stock', 'detail', 'qty', 'price', 'fee', 'tax', 'amount', 'settlement'];
+    }
+
+    // Full schema + type validation, used on both create and update.
+    function isValidEntry() {
+      let d = request.resource.data;
+      return hasOnlyAllowedFields(entryFields()) &&
+        hasRequiredFields(entryFields()) &&
+        d.id is number &&
+        validStringLength('date', 1, 20) &&
+        d.type in ['buy', 'sell', 'deposit', 'withdraw', 'div'] &&
+        d.market in ['overseas', 'domestic'] &&
+        validStringLength('stock', 0, 100) &&
+        validStringLength('detail', 0, 500) &&
+        d.qty is number &&
+        d.price is number &&
+        d.fee is number &&
+        d.tax is number &&
+        d.amount is number &&
+        d.settlement is number;
+    }
+
+    // On update, additionally require the immutable id field to stay unchanged.
+    function isValidEntryUpdate() {
+      return isValidEntry() && request.resource.data.id == resource.data.id;
+    }
+
+    match /users/{userId}/entries/{entryId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidEntry();
+      allow update: if isOwner(userId) && isValidEntryUpdate();
+      allow delete: if isOwner(userId);
+    }
+
+    // Default deny: block any path not explicitly matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

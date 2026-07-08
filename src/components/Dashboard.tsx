@@ -3,9 +3,10 @@
 import { useRef, useState } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import { useExcelImport } from '@/hooks/useExcelImport';
 import { Header } from './Header';
 import { Market } from '@/lib/types';
-import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
+import { exportEntriesToExcel } from '@/lib/excel';
 import { fmtUsd, fmtKrw, formatUsd } from '@/lib/utils';
 import { calcRealizedPL, calcPLByYear } from '@/lib/calculations';
 import { CapitalGainsTax } from './CapitalGainsTax';
@@ -80,15 +81,7 @@ export default function Dashboard() {
   }
 
   const handleExport = () => exportEntriesToExcel(entries);
-
-  const handleImport = async (file: File) => {
-    try {
-      const imported = await importEntriesFromExcel(file);
-      loadEntries(imported);
-    } catch (e) {
-      alert('엑셀 파일을 읽는 중 오류가 발생했습니다: ' + ((e as Error)?.message ?? String(e)));
-    }
-  };
+  const { handleImport, importConfirmModal } = useExcelImport(entries, loadEntries);
 
   function plCardValue() {
     if (filteredEntries.filter((e) => e.type === 'sell').length === 0) return '—';
@@ -132,6 +125,7 @@ export default function Dashboard() {
 
   return (
     <div>
+      {importConfirmModal}
       <Header
         onExport={handleExport}
         onImport={handleImport}

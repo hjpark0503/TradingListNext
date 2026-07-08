@@ -4,6 +4,10 @@
       "emailPassword": true
     }
   },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
     "site": "tradinglist-2026",
     "public": "out",

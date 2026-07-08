@@ -3,11 +3,12 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import { useExcelImport } from '@/hooks/useExcelImport';
 import { Header } from './Header';
 import { NoticeTicker } from './NoticeTicker';
 import { TradeTypeDonutChart } from './TradeTypeDonutChart';
 import { HoldingsList, calcHoldings, isETF, type HoldingFilter } from './HoldingsList';
-import { exportEntriesToExcel, importEntriesFromExcel } from '@/lib/excel';
+import { exportEntriesToExcel } from '@/lib/excel';
 
 function valueSize(val: string): string {
   const n = val.length;
@@ -115,14 +116,7 @@ export default function PortfolioPage() {
   }, [currentMarket]);
 
   const handleExport = () => exportEntriesToExcel(entries);
-  const handleImport = async (file: File) => {
-    try {
-      const imported = await importEntriesFromExcel(file);
-      loadEntries(imported);
-    } catch (e) {
-      alert('엑셀 파일을 읽는 중 오류가 발생했습니다: ' + ((e as Error)?.message ?? String(e)));
-    }
-  };
+  const { handleImport, importConfirmModal } = useExcelImport(entries, loadEntries);
 
   const FILTERS: { key: HoldingFilter; label: string; count: number }[] = [
     { key: 'all',   label: '보유 종목 전체', count: allHoldings.length },
@@ -132,6 +126,7 @@ export default function PortfolioPage() {
 
   return (
     <div>
+      {importConfirmModal}
       <Header
         onExport={handleExport}
         onImport={handleImport}
