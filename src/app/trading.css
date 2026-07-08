@@ -136,24 +136,6 @@ body {
 .header-right { flex:1; display:flex; align-items:center; justify-content:flex-end; gap:12px; }
 .header-actions { display:flex; align-items:center; gap:8px; }
 
-.header h1 {
-  font-size:1.0rem; font-weight:700; letter-spacing:-.02em;
-  color:var(--text-primary); line-height:1.2;
-  min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-
-.app-version {
-  font-size:.68rem; font-weight:500;
-  color:var(--text-tertiary);
-  background:var(--bg-hover);
-  border:1px solid var(--border);
-  border-radius:4px;
-  padding:1px 6px;
-  letter-spacing:.02em;
-  white-space:nowrap;
-  flex-shrink:0;
-}
-
 /* 공지 배너 */
 .notice-ticker {
   position: sticky;
@@ -1353,10 +1335,6 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
   :root { --page-pad:12px; }
   /* 헤더: 마켓 토글 유지, 버튼 아이콘만 표시 */
   .header { padding:0 var(--page-pad); }
-  .header h1 { font-size:.75rem; }
-  .app-version { display:none; }
-  .header-left { flex:0 0 auto; }
-  .header-center { flex:1; justify-content:center; }
   .header-market .seg-ctrl { height:34px; min-width:0; }
   .header-market .seg-btn  { font-size:.70rem; padding:0 10px; }
   .header-actions { gap:4px; }
@@ -1396,9 +1374,6 @@ tfoot td.r { text-align:right; color:var(--text-primary); }
 
 /* 초소형 화면(폴드/구형 폰): 헤더 컨트롤이 잘리지 않도록 압축 */
 @media (max-width:380px) {
-  .header-left { min-width:0; flex:0 1 auto; }
-  .header h1 { font-size:.72rem; }
-  .header-center { flex:0 1 auto; }
   .header-market .seg-ctrl { height:32px; }
   .header-market .seg-btn  { font-size:.66rem; padding:0 7px; }
   .header-actions { gap:2px; }

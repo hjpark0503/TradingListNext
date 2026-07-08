@@ -51,8 +51,15 @@ export function Header({ onExport, onImport, hasEntries, currentMarket, onMarket
   return (
     <div className="header">
       <div className="header-left">
-        <h1>영차영차 주식 거래일지</h1>
-        <span className="app-version">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+        <button
+          type="button"
+          className="btn-dark-toggle"
+          onClick={onToggleDark}
+          aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
+          title={isDark ? '라이트 모드' : '다크 모드'}
+        >
+          {isDark ? <SunIcon /> : <MoonIcon />}
+        </button>
       </div>
       <div className="header-center">
         <div className="header-market">
@@ -72,15 +79,6 @@ export function Header({ onExport, onImport, hasEntries, currentMarket, onMarket
       </div>
       <div className="header-right">
         <div className="header-actions">
-          <button
-            type="button"
-            className="btn-dark-toggle"
-            onClick={onToggleDark}
-            aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
-            title={isDark ? '라이트 모드' : '다크 모드'}
-          >
-            {isDark ? <SunIcon /> : <MoonIcon />}
-          </button>
           <input
             type="file"
             ref={inputRef}
